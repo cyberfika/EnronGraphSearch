@@ -1,25 +1,25 @@
 package br.edu.enron.util;
 
 /**
- * Utility class for normalizing and validating email addresses.
+ * Classe utilitária para normalização e validação de endereços de e-mail.
  *
- * <p>Validation here is intentionally minimal: the Enron dataset contains many
- * non-standard addresses (internal aliases, distribution lists, etc.), so strict
- * RFC 5321 validation would reject legitimate entries. The only hard requirement
- * is the presence of {@code @} and a non-empty string on each side.</p>
+ * <p>A validação aqui é intencionalmente mínima: o dataset da Enron contém muitos
+ * endereços não padronizados (aliases internos, listas de distribuição, etc.), 
+ * portanto, uma validação estrita do RFC 5321 rejeitaria entradas legítimas. 
+ * O único requisito rígido é a presença do {@code @} e uma string não vazia em cada lado.</p>
  */
 public final class EmailValidator {
 
     private EmailValidator() {
-        // utility class — no instances
+        // classe utilitária — sem instâncias
     }
 
     /**
-     * Normalizes an email address by trimming surrounding whitespace and converting
-     * to lowercase.
+     * Normaliza um endereço de e-mail removendo espaços em branco nas extremidades 
+     * e convertendo para minúsculas.
      *
-     * @param email the raw address; may be {@code null}.
-     * @return normalized address, or an empty string if {@code email} is {@code null}.
+     * @param email o endereço bruto; pode ser {@code null}.
+     * @return endereço normalizado, ou uma string vazia se {@code email} for {@code null}.
      */
     public static String normalize(String email) {
         if (email == null) return "";
@@ -27,19 +27,19 @@ public final class EmailValidator {
     }
 
     /**
-     * Returns {@code true} if the given string is a usable email address for graph
-     * construction purposes: non-null, non-blank, and containing exactly one
-     * {@code @} character with non-empty local and domain parts.
+     * Retorna {@code true} se a string fornecida for um endereço de e-mail utilizável para fins 
+     * de construção do grafo: não nulo, não vazio e contendo exatamente um caractere {@code @} 
+     * com partes local e de domínio não vazias.
      *
-     * @param email the address to validate (raw or already normalized).
-     * @return {@code true} if the address can be used as a vertex label.
+     * @param email o endereço a ser validado (bruto ou já normalizado).
+     * @return {@code true} se o endereço puder ser usado como rótulo de vértice.
      */
     public static boolean isValid(String email) {
         if (email == null || email.isBlank()) return false;
         String trimmed = email.trim();
         int atIndex = trimmed.indexOf('@');
-        if (atIndex <= 0) return false;                      // no @ or nothing before it
-        if (atIndex == trimmed.length() - 1) return false;  // nothing after @
-        return trimmed.indexOf('@', atIndex + 1) == -1;     // only one @
+        if (atIndex <= 0) return false;                      // sem @ ou nada antes dele
+        if (atIndex == trimmed.length() - 1) return false;  // nada depois do @
+        return trimmed.indexOf('@', atIndex + 1) == -1;     // apenas um @
     }
 }

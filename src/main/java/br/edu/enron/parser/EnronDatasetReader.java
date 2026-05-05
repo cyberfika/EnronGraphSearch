@@ -10,81 +10,81 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Walks the Enron Email Dataset directory tree, reads email files from
- * {@code sent} and {@code _sent_mail} subfolders of each user, deduplicates
- * exact copies that appear in both folders, and builds a {@link ContactGraph}.
+ * Percorre a árvore de diretórios do Enron Email Dataset, lê arquivos de e-mail das 
+ * subpastas {@code sent} e {@code _sent_mail} de cada usuário, remove duplicatas exatas 
+ * que aparecem em ambas as pastas e constrói um {@link ContactGraph}.
  *
- * <h2>Folder selection</h2>
- * <p>Only the {@code sent} and {@code _sent_mail} subfolders are used. These
- * represent outgoing messages from the mailbox owner's perspective, which is
- * exactly what we need: the sender is the folder owner (or the value in the
- * {@code From:} header), and the recipients are in the {@code To:} field.</p>
+ * <h2>Seleção de pastas</h2>
+ * <p>Apenas as subpastas {@code sent} e {@code _sent_mail} são utilizadas. Estas 
+ * representam mensagens enviadas sob a perspectiva do proprietário da caixa de correio, 
+ * que é exatamente o que precisamos: o remetente é o proprietário da pasta (ou o valor 
+ * no cabeçalho {@code From:}), e os destinatários estão no campo {@code To:}.</p>
  *
- * <h2>Deduplication</h2>
- * <p>Some users have both a {@code sent} and a {@code _sent_mail} folder that
- * contain overlapping messages. To avoid counting the same email twice
- * (which would artificially inflate edge weights), each file's content is
- * hashed with SHA-256. If the same hash appears in both folders for a given
- * user, only the first occurrence encountered is processed.</p>
+ * <h2>Deduplicação</h2>
+ * <p>Alguns usuários possuem tanto uma pasta {@code sent} quanto uma {@code _sent_mail} 
+ * que contêm mensagens sobrepostas. Para evitar contar o mesmo e-mail duas vezes 
+ * (o que inflaria artificialmente os pesos das arestas), o conteúdo de cada arquivo 
+ * é submetido a um hash SHA-256. Se o mesmo hash aparecer em ambas as pastas para um 
+ * determinado usuário, apenas a primeira ocorrência encontrada é processada.</p>
  *
- * <h2>Thread header rule</h2>
- * <p>Only the top-level header block of each file is parsed (everything before
- * the first blank line). Quoted or forwarded headers inside the body are ignored.
- * See {@link EmailParser} for details.</p>
+ * <h2>Regra de cabeçalho de thread</h2>
+ * <p>Apenas o bloco de cabeçalho de nível superior de cada arquivo é analisado 
+ * (tudo antes da primeira linha em branco). Cabeçalhos citados ou encaminhados 
+ * dentro do corpo são ignorados. Consulte {@link EmailParser} para detalhes.</p>
  *
- * <h2>Binary cache</h2>
- * <p>After parsing, the resulting {@link ContactGraph} is serialized to a binary
- * file ({@code graph.bin}) next to the dataset root. On subsequent runs the cache
- * is loaded directly, bypassing the full file scan. Pass {@code --rebuild} as a
- * CLI argument (handled in {@code Main}) to force re-parsing even when the cache
- * exists.</p>
+ * <h2>Cache binário</h2>
+ * <p>Após a análise, o {@link ContactGraph} resultante é serializado para um arquivo binário 
+ * ({@code graph.bin}) ao lado da raiz do dataset. Em execuções subsequentes, o cache 
+ * é carregado diretamente, ignorando a varredura completa dos arquivos. Passe {@code --rebuild} 
+ * como um argumento CLI (tratado em {@code Main}) para forçar a reanálise mesmo quando o 
+ * cache existir.</p>
  */
 public class EnronDatasetReader {
 
     private static final Logger LOG = Logger.getLogger(EnronDatasetReader.class.getName());
 
-    /** Name of the binary cache file written next to the dataset root directory. */
+    /** Nome do arquivo de cache binário gravado ao lado do diretório raiz do dataset. */
     public static final String CACHE_FILENAME = "graph.bin";
 
-    /** Subfolder names to read from each user directory. */
+    /** Nomes das subpastas a serem lidas de cada diretório de usuário. */
     private static final Set<String> TARGET_FOLDERS = Set.of("sent", "_sent_mail");
 
     private final EmailParser parser;
 
-    // Counters for reporting
+    // Contadores para relatórios
     private int filesRead;
     private int filesSkipped;
     private int duplicatesDropped;
     private int messagesValid;
 
     /**
-     * Constructs a reader with a default {@link EmailParser}.
+     * Constrói um leitor com um {@link EmailParser} padrão.
      */
     public EnronDatasetReader() {
         this.parser = new EmailParser();
     }
 
     // -------------------------------------------------------------------------
-    // Cache API
+    // API de Cache
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the path where the binary graph cache will be written, placed
-     * alongside the dataset root directory.
+     * Retorna o caminho onde o cache binário do grafo será gravado, colocado 
+     * ao lado do diretório raiz do dataset.
      *
-     * @param datasetRoot the base directory of the Enron dataset.
-     * @return the cache file path.
+     * @param datasetRoot o diretório base do dataset Enron.
+     * @return o caminho do arquivo de cache.
      */
     public static Path cachePath(Path datasetRoot) {
         return datasetRoot.getParent().resolve(CACHE_FILENAME);
     }
 
     /**
-     * Attempts to load a previously serialized {@link ContactGraph} from the
-     * binary cache file.
+     * Tenta carregar um {@link ContactGraph} previamente serializado a partir do 
+     * arquivo de cache binário.
      *
-     * @param cacheFile path to the {@code .bin} cache file.
-     * @return the deserialized graph, or {@code null} if loading fails.
+     * @param cacheFile caminho para o arquivo de cache {@code .bin}.
+     * @return o grafo desserializado, ou {@code null} se o carregamento falhar.
      */
     public ContactGraph loadFromCache(Path cacheFile) {
         if (!Files.exists(cacheFile)) return null;
@@ -92,63 +92,62 @@ public class EnronDatasetReader {
                 new BufferedInputStream(Files.newInputStream(cacheFile)))) {
             Object obj = ois.readObject();
             if (obj instanceof ContactGraph g) {
-                LOG.info("Graph loaded from cache: " + cacheFile);
+                LOG.info("Grafo carregado do cache: " + cacheFile);
                 return g;
             }
         } catch (IOException | ClassNotFoundException e) {
-            LOG.warning("Cache load failed (" + e.getMessage() + "); will rebuild.");
+            LOG.warning("Falha no carregamento do cache (" + e.getMessage() + "); será reconstruído.");
         }
         return null;
     }
 
     /**
-     * Serializes the given graph to the binary cache file for future reuse.
+     * Serializa o grafo fornecido para o arquivo de cache binário para uso futuro.
      *
-     * @param graph     the graph to persist.
-     * @param cacheFile destination path for the cache file.
+     * @param graph     o grafo a ser persistido.
+     * @param cacheFile caminho de destino para o arquivo de cache.
      */
     public void saveToCache(ContactGraph graph, Path cacheFile) {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(cacheFile)))) {
             oos.writeObject(graph);
-            LOG.info("Graph saved to cache: " + cacheFile);
+            LOG.info("Grafo salvo no cache: " + cacheFile);
         } catch (IOException e) {
-            LOG.warning("Could not save graph cache: " + e.getMessage());
+            LOG.warning("Não foi possível salvar o cache do grafo: " + e.getMessage());
         }
     }
 
     // -------------------------------------------------------------------------
-    // Graph construction
+    // Construção do Grafo
     // -------------------------------------------------------------------------
 
     /**
-     * Builds a {@link ContactGraph} by scanning all user directories under
-     * {@code datasetRoot}, reading only {@code sent} and {@code _sent_mail}
-     * subfolders, deduplicating file content between the two folders per user,
-     * and parsing each unique email file.
+     * Constrói um {@link ContactGraph} varrendo todos os diretórios de usuários sob 
+     * {@code datasetRoot}, lendo apenas as subpastas {@code sent} e {@code _sent_mail}, 
+     * removendo duplicatas de conteúdo de arquivo entre as duas pastas por usuário 
+     * e analisando cada arquivo de e-mail único.
      *
-     * <p>Files that cannot be read are counted as skipped and do not interrupt
-     * the overall scan.</p>
+     * <p>Arquivos que não podem ser lidos são contados como pulados e não interrompem 
+     * a varredura geral.</p>
      *
-     * @param datasetRoot the root directory containing one subdirectory per user
-     *                    (e.g., {@code data/maildir}).
-     * @return the populated contact graph.
-     * @throws IllegalArgumentException if {@code datasetRoot} is not an existing
-     *                                  directory.
+     * @param datasetRoot o diretório raiz contendo um subdiretório por usuário 
+     *                    (ex: {@code data/maildir}).
+     * @return o grafo de contatos preenchido.
+     * @throws IllegalArgumentException se {@code datasetRoot} não for um diretório existente.
      */
     public ContactGraph buildGraph(Path datasetRoot) {
         if (!Files.isDirectory(datasetRoot)) {
-            throw new IllegalArgumentException("Dataset root is not a directory: " + datasetRoot);
+            throw new IllegalArgumentException("A raiz do dataset não é um diretório: " + datasetRoot);
         }
 
         resetCounters();
         ContactGraph graph = new ContactGraph();
 
-        // Each immediate subdirectory is one user's mailbox
+        // Cada subdiretório imediato é a caixa de correio de um usuário
         File[] userDirs = datasetRoot.toFile().listFiles(File::isDirectory);
         if (userDirs == null) return graph;
 
-        Arrays.sort(userDirs); // deterministic ordering for reproducibility
+        Arrays.sort(userDirs); // ordenação determinística para reprodutibilidade
 
         for (File userDir : userDirs) {
             processUserDirectory(userDir.toPath(), graph);
@@ -159,19 +158,19 @@ public class EnronDatasetReader {
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Processes one user's mailbox: collects files from {@code sent} and
-     * {@code _sent_mail}, deduplicates them, then parses and feeds each unique
-     * message into the graph.
+     * Processa a caixa de correio de um usuário: coleta arquivos de {@code sent} e 
+     * {@code _sent_mail}, remove duplicatas e, em seguida, analisa e insere cada 
+     * mensagem única no grafo.
      *
-     * @param userDir the user's mailbox directory.
-     * @param graph   the graph being built.
+     * @param userDir o diretório da caixa de correio do usuário.
+     * @param graph   o grafo que está sendo construído.
      */
     private void processUserDirectory(Path userDir, ContactGraph graph) {
-        // Collect all candidate files per target folder
+        // Coletar todos os arquivos candidatos por pasta de destino
         Map<String, List<Path>> folderFiles = new LinkedHashMap<>();
         for (String folderName : TARGET_FOLDERS) {
             Path subDir = userDir.resolve(folderName);
@@ -180,7 +179,7 @@ public class EnronDatasetReader {
             }
         }
 
-        // Deduplicate across folders using content hashes
+        // Remover duplicatas entre pastas usando hashes de conteúdo
         Set<String> seenHashes = new HashSet<>();
         List<Path> uniqueFiles  = new ArrayList<>();
 
@@ -199,7 +198,7 @@ public class EnronDatasetReader {
             }
         }
 
-        // Parse and ingest each unique message
+        // Analisar e ingerir cada mensagem única
         for (Path file : uniqueFiles) {
             filesRead++;
             String raw = readFile(file);
@@ -212,7 +211,7 @@ public class EnronDatasetReader {
                 filesSkipped++;
                 continue;
             }
-            // Register this sender as a mailbox owner (filters the From combo box)
+            // Registrar este remetente como proprietário de caixa de correio (filtra o combo box De)
             graph.addOwner(msg.getSender());
             for (String recipient : msg.getRecipients()) {
                 graph.addEdge(msg.getSender(), recipient);
@@ -222,11 +221,11 @@ public class EnronDatasetReader {
     }
 
     /**
-     * Lists all regular files in a directory (non-recursive — Enron sent folders
-     * are flat: each file is one email).
+     * Lista todos os arquivos regulares em um diretório (não recursivo — as pastas sent 
+     * da Enron são planas: cada arquivo é um e-mail).
      *
-     * @param dir the directory to list.
-     * @return sorted list of file paths.
+     * @param dir o diretório para listar.
+     * @return lista ordenada de caminhos de arquivos.
      */
     private List<Path> listEmailFiles(Path dir) {
         File[] files = dir.toFile().listFiles(File::isFile);
@@ -238,10 +237,10 @@ public class EnronDatasetReader {
     }
 
     /**
-     * Reads the entire content of a file as a UTF-8 string.
+     * Lê todo o conteúdo de um arquivo como uma string UTF-8.
      *
-     * @param file path to the file.
-     * @return file content, or {@code null} if an I/O error occurs.
+     * @param file caminho para o arquivo.
+     * @return conteúdo do arquivo, ou {@code null} se ocorrer um erro de E/S.
      */
     private String readFile(Path file) {
         try {
@@ -252,10 +251,10 @@ public class EnronDatasetReader {
     }
 
     /**
-     * Computes a hex-encoded SHA-256 hash of the file's content for deduplication.
+     * Calcula um hash SHA-256 codificado em hexadecimal do conteúdo do arquivo para deduplicação.
      *
-     * @param file path to the file.
-     * @return hex hash string, or {@code null} on error.
+     * @param file caminho para o arquivo.
+     * @return string de hash hexadecimal, ou {@code null} em caso de erro.
      */
     private String contentHash(Path file) {
         try {
@@ -270,17 +269,17 @@ public class EnronDatasetReader {
         }
     }
 
-    /** Resets all counters before a new scan. */
+    /** Redefine todos os contadores antes de uma nova varredura. */
     private void resetCounters() {
         filesRead = filesSkipped = duplicatesDropped = messagesValid = 0;
     }
 
-    /** Prints a scan summary to standard output. */
+    /** Imprime um resumo da varredura na saída padrão. */
     private void printReport() {
-        System.out.println("=== Dataset scan complete ===");
-        System.out.println("  Files read       : " + filesRead);
-        System.out.println("  Duplicates dropped: " + duplicatesDropped);
-        System.out.println("  Files skipped    : " + filesSkipped);
-        System.out.println("  Valid messages   : " + messagesValid);
+        System.out.println("=== Varredura do dataset concluída ===");
+        System.out.println("  Arquivos lidos            : " + filesRead);
+        System.out.println("  Duplicatas descartadas    : " + duplicatesDropped);
+        System.out.println("  Arquivos pulados          : " + filesSkipped);
+        System.out.println("  Mensagens válidas         : " + messagesValid);
     }
 }

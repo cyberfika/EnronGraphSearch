@@ -21,7 +21,7 @@ import java.util.List;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Tab 02 - DFS/BFS path search between two vertices.
+ * Aba 02 - Busca de caminho DFS/BFS entre dois vértices.
  */
 public final class DfsBfsPanel extends JPanel {
 

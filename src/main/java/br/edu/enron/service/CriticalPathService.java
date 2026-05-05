@@ -8,56 +8,52 @@ import br.edu.enron.model.Vertex;
 import java.util.*;
 
 /**
- * Computes the approximate critical path of information flow between two
- * individuals using an adapted Dijkstra algorithm.
+ * Calcula o caminho crítico aproximado do fluxo de informações entre dois indivíduos 
+ * usando um algoritmo de Dijkstra adaptado.
  *
- * <h2>Motivation</h2>
- * <p>In the contact graph, a high edge weight means the two individuals
- * communicated frequently — a strong dependency. The "critical path" is defined
- * here as the path that maximises accumulated communication dependency between
- * the source and the target.</p>
+ * <h2>Motivação</h2>
+ * <p>No grafo de contatos, um peso de aresta alto significa que os dois indivíduos se 
+ * comunicaram com frequência — uma dependência forte. O "caminho crítico" é definido aqui 
+ * como o caminho que maximiza a dependência de comunicação acumulada entre a origem e o destino.</p>
  *
- * <h2>Dijkstra adaptation</h2>
- * <p>Standard Dijkstra minimises cost. To maximise dependency we apply the
- * transformation:
+ * <h2>Adaptação do Dijkstra</h2>
+ * <p>O Dijkstra padrão minimiza o custo. Para maximizar a dependência, aplicamos a transformação:
  * <pre>
- *     cost(edge) = 1.0 / weight
+ *     custo(aresta) = 1.0 / peso
  * </pre>
- * A high-weight (strong) edge becomes a low-cost edge. Dijkstra therefore
- * naturally selects the path whose edges have the highest total weight — the
- * most communication-dense route.</p>
+ * Uma aresta de peso alto (forte) torna-se uma aresta de custo baixo. Portanto, o Dijkstra seleciona 
+ * naturalmente o caminho cujas arestas têm o maior peso total — a rota mais densa em comunicação.</p>
  *
- * <p>This is an <em>approximation</em> of the true critical path because the
- * inverse-cost optimisation is not equivalent to directly maximising the sum of
- * weights (which would require a longest-path algorithm, an NP-hard problem for
- * general graphs). The approximation is nevertheless well-motivated and
- * academically appropriate for this project.</p>
+ * <p>Esta é uma <em>aproximação</em> do verdadeiro caminho crítico porque a otimização do custo 
+ * inverso não é equivalente a maximizar diretamente a soma dos pesos (o que exigiria um algoritmo 
+ * de caminho mais longo, um problema NP-difícil para grafos em geral). No entanto, a aproximação 
+ * é bem fundamentada e academicamente apropriada para este projeto.</p>
  *
- * <h2>Output</h2>
+ * <h2>Saída</h2>
  * <ul>
- *   <li>The sequence of vertices on the path.</li>
- *   <li>The total inverse cost (internal Dijkstra metric).</li>
- *   <li>The accumulated dependency: the sum of the original weights of the edges
- *       on the chosen path, presented as the "strength" of the information flow.</li>
+ *   <li>A sequência de vértices no caminho.</li>
+ *   <li>O custo inverso total (métrica interna do Dijkstra).</li>
+ *   <li>A dependência acumulada: a soma dos pesos originais das arestas no caminho escolhido, 
+ *       apresentada como a "força" do fluxo de informações.</li>
  * </ul>
  *
- * <h2>Cycle safety</h2>
- * <p>Dijkstra inherently avoids revisiting vertices: once a vertex is settled
- * (extracted from the priority queue with the minimum known distance), it is never
- * relaxed again. A settled set enforces this guarantee.</p>
+ * <h2>Segurança contra ciclos</h2>
+ * <p>O Dijkstra evita inerentemente revisitar vértices: uma vez que um vértice é "resolvido" 
+ * (extraído da fila de prioridade com a distância mínima conhecida), ele nunca mais é relaxado. 
+ * Um conjunto de resolvidos (settled set) reforça esta garantia.</p>
  */
 public class CriticalPathService {
 
     /**
-     * Computes the critical (maximum-dependency) path from {@code originEmail} to
-     * {@code destinationEmail} using Dijkstra with inverse-weight costs.
+     * Calcula o caminho crítico (dependência máxima) de {@code originEmail} para
+     * {@code destinationEmail} usando Dijkstra com custos de peso inverso.
      *
-     * @param graph            the contact graph; must not be {@code null}.
-     * @param originEmail      the source vertex's email; must not be {@code null} or blank.
-     * @param destinationEmail the target vertex's email; must not be {@code null} or blank.
-     * @return a {@link PathResult} containing the path, total inverse cost and
-     *         accumulated dependency; empty if no path exists or a vertex is absent.
-     * @throws IllegalArgumentException if any argument is {@code null} or blank.
+     * @param graph            o grafo de contatos; não deve ser {@code null}.
+     * @param originEmail      o e-mail do vértice de origem; não deve ser {@code null} ou vazio.
+     * @param destinationEmail o e-mail do vértice de destino; não deve ser {@code null} ou vazio.
+     * @return um {@link PathResult} contendo o caminho, o custo inverso total e a 
+     *         dependência acumulada; vazio se não existir caminho ou se um vértice estiver ausente.
+     * @throws IllegalArgumentException se qualquer argumento for {@code null} ou vazio.
      */
     public PathResult computeCriticalPath(ContactGraph graph,
                                           String originEmail,
@@ -73,15 +69,15 @@ public class CriticalPathService {
 
         if (source.equals(destination)) return new PathResult(List.of(source), 0.0, 0.0);
 
-        // dist[v] = minimum accumulated inverse cost from source to v
+        // dist[v] = custo inverso acumulado mínimo da origem até v
         Map<Vertex, Double> dist        = new HashMap<>();
         Map<Vertex, Vertex> predecessor = new HashMap<>();
         Set<Vertex>         settled     = new HashSet<>();
 
-        // Priority queue ordered by accumulated inverse cost (ascending — lower is better)
+        // Fila de prioridade ordenada pelo custo inverso acumulado (ascendente — menor é melhor)
         PriorityQueue<VertexEntry> pq = new PriorityQueue<>(Comparator.comparingDouble(e -> e.cost));
 
-        // Initialise: all distances are infinity except the source
+        // Inicializar: todas as distâncias são infinito exceto a origem
         for (Vertex v : graph.getVertices()) {
             dist.put(v, Double.MAX_VALUE);
         }
@@ -93,10 +89,10 @@ public class CriticalPathService {
             VertexEntry entry   = pq.poll();
             Vertex      current = entry.vertex;
 
-            // Skip if already settled (stale queue entry)
+            // Pular se já estiver resolvido (entrada obsoleta na fila)
             if (!settled.add(current)) continue;
 
-            // Early exit once the destination is settled
+            // Saída antecipada assim que o destino for resolvido
             if (current.equals(destination)) break;
 
             for (Edge edge : graph.getOutEdges(current)) {
@@ -112,7 +108,7 @@ public class CriticalPathService {
             }
         }
 
-        if (!settled.contains(destination)) return new PathResult(List.of()); // unreachable
+        if (!settled.contains(destination)) return new PathResult(List.of()); // inalcançável
 
         List<Vertex> path             = reconstructPath(predecessor, source, destination);
         double       totalInverseCost = dist.get(destination);
@@ -122,17 +118,17 @@ public class CriticalPathService {
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Reconstructs the ordered vertex path by tracing the predecessor map from
-     * destination back to source.
+     * Reconstrói o caminho ordenado de vértices rastreando o mapa de antecessores do 
+     * destino de volta à origem.
      *
-     * @param predecessor map from each vertex to the vertex it was reached from.
-     * @param source      the origin vertex.
-     * @param destination the settled destination.
-     * @return ordered list from source to destination.
+     * @param predecessor mapa de cada vértice para o vértice do qual ele foi alcançado.
+     * @param source      o vértice de origem.
+     * @param destination o destino resolvido.
+     * @return lista ordenada da origem ao destino.
      */
     private List<Vertex> reconstructPath(Map<Vertex, Vertex> predecessor,
                                           Vertex source, Vertex destination) {
@@ -147,12 +143,12 @@ public class CriticalPathService {
     }
 
     /**
-     * Computes the accumulated dependency of a path: the sum of the original
-     * (non-inverted) weights of the edges along the path.
+     * Calcula a dependência acumulada de um caminho: a soma dos pesos originais 
+     * (não invertidos) das arestas ao longo do caminho.
      *
-     * @param graph the graph containing the edges.
-     * @param path  the ordered list of vertices forming the path.
-     * @return sum of original edge weights; {@code 0.0} for paths of length &lt; 2.
+     * @param graph o grafo contendo as arestas.
+     * @param path  a lista ordenada de vértices que formam o caminho.
+     * @return soma dos pesos originais das arestas; {@code 0.0} para caminhos com comprimento &lt; 2.
      */
     private double computeAccumulatedDependency(ContactGraph graph, List<Vertex> path) {
         double total = 0.0;
@@ -170,12 +166,12 @@ public class CriticalPathService {
     }
 
     /**
-     * Validates method arguments.
+     * Valida os argumentos do método.
      *
-     * @param graph            the graph argument.
-     * @param originEmail      the origin email argument.
-     * @param destinationEmail the destination email argument.
-     * @throws IllegalArgumentException on invalid input.
+     * @param graph            o argumento do grafo.
+     * @param originEmail      o argumento do e-mail de origem.
+     * @param destinationEmail o argumento do e-mail de destino.
+     * @throws IllegalArgumentException em caso de entrada inválida.
      */
     private void validateArgs(ContactGraph graph, String originEmail, String destinationEmail) {
         if (graph == null) throw new IllegalArgumentException("Graph must not be null.");
@@ -186,12 +182,12 @@ public class CriticalPathService {
     }
 
     // -------------------------------------------------------------------------
-    // Internal data class
+    // Classe de dados interna
     // -------------------------------------------------------------------------
 
     /**
-     * Simple container pairing a vertex with its current accumulated cost,
-     * used as entries in the priority queue.
+     * Container simples que emparelha um vértice com seu custo acumulado atual, 
+     * usado como entradas na fila de prioridade.
      */
     private record VertexEntry(Vertex vertex, double cost) {}
 }

@@ -17,7 +17,7 @@ import java.util.List;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Tab 01 — Visão Geral: graph statistics and leaderboards.
+ * Aba 01 — Visão Geral: estatísticas do grafo e classificações.
  */
 public final class OverviewPanel extends JPanel {
 
@@ -54,7 +54,7 @@ public final class OverviewPanel extends JPanel {
         add(scroll, BorderLayout.CENTER);
     }
 
-    // ── Stat cards ──────────────────────────────────────────────────────────
+    // ── Cards de estatísticas ───────────────────────────────────────────────
 
     private JPanel statCards(ContactGraph graph, int totalMessages, double density) {
         JPanel p = new JPanel(new GridLayout(1, 4, 0, 0));
@@ -95,7 +95,7 @@ public final class OverviewPanel extends JPanel {
         return cell;
     }
 
-    // ── Leaderboard ─────────────────────────────────────────────────────────
+    // ── Classificação (Leaderboard) ─────────────────────────────────────────
 
     private JPanel leaderboard(List<DegreeResult> top20Out, List<DegreeResult> top20In) {
         JPanel p = new JPanel(new GridLayout(1, 2, 0, 0));

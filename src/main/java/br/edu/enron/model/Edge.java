@@ -4,45 +4,43 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Represents a directed, weighted edge between two individuals in the contact graph.
+ * Representa uma aresta direcionada e ponderada entre dois indivíduos no grafo de contatos.
  *
- * <p>An edge from {@code origin} to {@code destination} is created the first time
- * {@code origin} sends a message to {@code destination}. Each subsequent message
- * between the same pair increments the {@link #weight} by one via
- * {@link #incrementWeight()}, so the weight always reflects the total number of
- * messages sent from origin to destination.</p>
+ * <p>Uma aresta de {@code origin} para {@code destination} é criada na primeira vez que
+ * {@code origin} envia uma mensagem para {@code destination}. Cada mensagem subsequente
+ * entre o mesmo par incrementa o {@link #weight} em um via {@link #incrementWeight()}, 
+ * portanto, o peso sempre reflete o número total de mensagens enviadas da origem para o destino.</p>
  *
- * <p>The edge is directional: an edge A→B is entirely independent of an edge B→A.
- * This matches the semantics of the Enron dataset where sending and receiving are
- * asymmetric roles.</p>
+ * <p>A aresta é direcional: uma aresta A→B é inteiramente independente de uma aresta B→A. 
+ * Isso corresponde à semântica do dataset da Enron, onde o envio e o recebimento são papéis assimétricos.</p>
  *
- * <p>The method {@link #getInverseCost()} returns {@code 1.0 / weight} and is used
- * by the adapted Dijkstra algorithm in {@code CriticalPathService}: a high-weight
- * edge (strong communication dependency) is mapped to a low cost, so the shortest
- * path through inverse costs corresponds to the path of maximum dependency.</p>
+ * <p>O método {@link #getInverseCost()} retorna {@code 1.0 / weight} e é usado pelo algoritmo 
+ * de Dijkstra adaptado no {@code CriticalPathService}: uma aresta de peso alto (forte dependência de comunicação) 
+ * é mapeada para um custo baixo, de modo que o caminho mais curto através dos custos inversos 
+ * corresponde ao caminho de dependência máxima.</p>
  */
 public final class Edge implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** The sender vertex — source of the directed edge. */
+    /** O vértice remetente — fonte da aresta direcionada. */
     private final Vertex origin;
 
-    /** The recipient vertex — target of the directed edge. */
+    /** O vértice destinatário — destino da aresta direcionada. */
     private final Vertex destination;
 
     /**
-     * Number of messages sent from {@link #origin} to {@link #destination}.
-     * Starts at 1 and grows via {@link #incrementWeight()}.
+     * Número de mensagens enviadas de {@link #origin} para {@link #destination}.
+     * Começa em 1 e cresce via {@link #incrementWeight()}.
      */
     private int weight;
 
     /**
-     * Constructs a new edge with an initial weight of 1.
+     * Constrói uma nova aresta com um peso inicial de 1.
      *
-     * @param origin      the sending vertex; must not be {@code null}.
-     * @param destination the receiving vertex; must not be {@code null}.
-     * @throws IllegalArgumentException if either vertex is {@code null}.
+     * @param origin      o vértice remetente; não deve ser {@code null}.
+     * @param destination o vértice destinatário; não deve ser {@code null}.
+     * @throws IllegalArgumentException se qualquer vértice for {@code null}.
      */
     public Edge(Vertex origin, Vertex destination) {
         if (origin == null || destination == null) {
@@ -54,60 +52,60 @@ public final class Edge implements Serializable {
     }
 
     /**
-     * Returns the origin (sender) vertex of this directed edge.
+     * Retorna o vértice de origem (remetente) desta aresta direcionada.
      *
-     * @return the sending vertex.
+     * @return o vértice remetente.
      */
     public Vertex getOrigin() {
         return origin;
     }
 
     /**
-     * Returns the destination (recipient) vertex of this directed edge.
+     * Retorna o vértice de destino (destinatário) desta aresta direcionada.
      *
-     * @return the receiving vertex.
+     * @return o vértice destinatário.
      */
     public Vertex getDestination() {
         return destination;
     }
 
     /**
-     * Returns the current weight of this edge, i.e., the total number of messages
-     * sent from {@link #origin} to {@link #destination}.
+     * Retorna o peso atual desta aresta, ou seja, o número total de mensagens
+     * enviadas de {@link #origin} para {@link #destination}.
      *
-     * @return a positive integer representing message frequency.
+     * @return um número inteiro positivo representando a frequência das mensagens.
      */
     public int getWeight() {
         return weight;
     }
 
     /**
-     * Increments the edge weight by one, recording one additional message sent
-     * from {@link #origin} to {@link #destination}.
+     * Incrementa o peso da aresta em um, registrando uma mensagem adicional enviada
+     * de {@link #origin} para {@link #destination}.
      */
     public void incrementWeight() {
         this.weight++;
     }
 
     /**
-     * Returns the inverse cost used by the adapted Dijkstra algorithm.
+     * Retorna o custo inverso usado pelo algoritmo de Dijkstra adaptado.
      *
-     * <p>Formula: {@code 1.0 / weight}. A heavier edge (more messages) produces a
-     * smaller cost, so Dijkstra minimising this value will favour paths that pass
-     * through high-frequency communication links — yielding the critical
-     * (maximum-dependency) path.</p>
+     * <p>Fórmula: {@code 1.0 / weight}. Uma aresta mais pesada (mais mensagens) produz um
+     * custo menor, portanto, o Dijkstra minimizando este valor favorecerá caminhos que passam
+     * por links de comunicação de alta frequência — resultando no caminho crítico
+     * (de dependência máxima).</p>
      *
-     * @return {@code 1.0 / weight}, always a positive double.
+     * @return {@code 1.0 / weight}, sempre um double positivo.
      */
     public double getInverseCost() {
         return 1.0 / weight;
     }
 
     /**
-     * Returns a human-readable representation of the edge, including origin,
-     * destination and current weight.
+     * Retorna uma representação legível da aresta, incluindo origem,
+     * destino e peso atual.
      *
-     * @return formatted edge string.
+     * @return string da aresta formatada.
      */
     @Override
     public String toString() {

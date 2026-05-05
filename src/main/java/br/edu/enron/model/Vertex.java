@@ -4,30 +4,29 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Represents an individual in the Enron contact network.
+ * Representa um indivíduo na rede de contatos da Enron.
  *
- * <p>Each vertex corresponds to a unique email address. It serves as the labeled
- * node of the directed weighted graph: the label is the email itself, normalized
- * to lowercase and stripped of surrounding whitespace so that two addresses that
- * differ only in case or spacing are treated as the same person.</p>
+ * <p>Cada vértice corresponde a um endereço de e-mail exclusivo. Ele serve como o nó rotulado
+ * do grafo direcionado e ponderado: o rótulo é o próprio e-mail, normalizado para letras minúsculas 
+ * e sem espaços em branco nas extremidades, para que dois endereços que diferem apenas em maiúsculas 
+ * ou espaços sejam tratados como a mesma pessoa.</p>
  *
- * <p>{@link #equals(Object)} and {@link #hashCode()} are based solely on the
- * email string, which allows vertices to be safely stored in {@code HashMap} and
- * {@code HashSet} collections and looked up by address without holding a direct
- * object reference.</p>
+ * <p>{@link #equals(Object)} e {@link #hashCode()} baseiam-se exclusivamente na string do e-mail, 
+ * o que permite que os vértices sejam armazenados com segurança em coleções {@code HashMap} e
+ * {@code HashSet} e pesquisados por endereço sem a necessidade de manter uma referência direta ao objeto.</p>
  */
 public final class Vertex implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /** Normalized email address that uniquely identifies this vertex. */
+    /** Endereço de e-mail normalizado que identifica exclusivamente este vértice. */
     private final String email;
 
     /**
-     * Constructs a vertex for the given email address.
+     * Constrói um vértice para o endereço de e-mail fornecido.
      *
-     * @param email the raw email address; must not be {@code null} or blank.
-     * @throws IllegalArgumentException if {@code email} is {@code null} or blank.
+     * @param email o endereço de e-mail bruto; não deve ser {@code null} ou vazio.
+     * @throws IllegalArgumentException se {@code email} for {@code null} ou vazio.
      */
     public Vertex(String email) {
         if (email == null || email.isBlank()) {
@@ -37,19 +36,19 @@ public final class Vertex implements Serializable {
     }
 
     /**
-     * Returns the normalized email address that labels this vertex.
+     * Retorna o endereço de e-mail normalizado que rotula este vértice.
      *
-     * @return the lowercase, trimmed email string.
+     * @return a string do e-mail em minúsculas e sem espaços nas extremidades.
      */
     public String getEmail() {
         return email;
     }
 
     /**
-     * Two vertices are equal if and only if their normalized email addresses are equal.
+     * Dois vértices são iguais se, e somente se, seus endereços de e-mail normalizados forem iguais.
      *
-     * @param obj the object to compare with.
-     * @return {@code true} if {@code obj} is a {@code Vertex} with the same email.
+     * @param obj o objeto a ser comparado.
+     * @return {@code true} se {@code obj} for um {@code Vertex} com o mesmo e-mail.
      */
     @Override
     public boolean equals(Object obj) {
@@ -59,10 +58,10 @@ public final class Vertex implements Serializable {
     }
 
     /**
-     * Hash code derived exclusively from the normalized email so that the
-     * contract {@code equals → same hashCode} is satisfied.
+     * Código hash derivado exclusivamente do e-mail normalizado para que o 
+     * contrato {@code equals → mesmo hashCode} seja satisfeito.
      *
-     * @return hash code of the email string.
+     * @return código hash da string do e-mail.
      */
     @Override
     public int hashCode() {
@@ -70,9 +69,9 @@ public final class Vertex implements Serializable {
     }
 
     /**
-     * Returns the email address as the string representation of this vertex.
+     * Retorna o endereço de e-mail como a representação em string deste vértice.
      *
-     * @return the normalized email.
+     * @return o e-mail normalizado.
      */
     @Override
     public String toString() {

@@ -6,6 +6,7 @@ import br.edu.enron.util.FontManager;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.plaf.basic.BasicScrollBarUI;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -14,13 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Shared Swing factory methods and style utilities.
- * Centralises label creation, scroll-bar theming, combo-box building,
- * and other repetitive UI construction so that panel classes stay lean.
+ * Métodos de fábrica Swing compartilhados e utilitários de estilo.
+ * Centraliza a criação de rótulos, a estilização da barra de rolagem, a construção de caixas de combinação 
+ * e outras construções repetitivas de UI para que as classes de painel permaneçam enxutas.
  */
 public final class SwingHelper {
 
-    // ── Fonts (resolved once, reused everywhere) ────────────────────────────
+    // ── Fontes (resolvidas uma vez, reutilizadas em todos os lugares) ─────────
     public static final Font MONO_MD  = FontManager.getMonospacedFont(12);
     public static final Font MONO_SM  = FontManager.getMonospacedFont(11);
     public static final Font MONO_XS  = FontManager.getMonospacedFont(10);
@@ -30,9 +31,9 @@ public final class SwingHelper {
     public static final Font NUM_XL   = FontManager.getSerifBoldFont(44);
     public static final Font NUM_MD   = FontManager.getSerifBoldFont(16);
 
-    private SwingHelper() { /* utility */ }
+    private SwingHelper() { /* utilitário */ }
 
-    // ── Label factory ───────────────────────────────────────────────────────
+    // ── Fábrica de rótulos ───────────────────────────────────────────────────
 
     public static JLabel lbl(String text, Font font, Color color) {
         JLabel l = new JLabel(text);
@@ -41,7 +42,7 @@ public final class SwingHelper {
         return l;
     }
 
-    /** Badge matching .dataset-card .badge from the web design. */
+    /** Crachá (badge) correspondente a .dataset-card .badge do design web. */
     public static JLabel badge(String text, Color color) {
         JLabel l = new JLabel(text);
         l.setFont(MONO_XS);
@@ -52,7 +53,7 @@ public final class SwingHelper {
         return l;
     }
 
-    /** Property-tag pill (bordered label). */
+    /** Pílula de etiqueta de propriedade (rótulo com borda). */
     public static JLabel propTag(String text) {
         JLabel l = new JLabel(text);
         l.setFont(MONO_XS);
@@ -66,7 +67,7 @@ public final class SwingHelper {
         return l;
     }
 
-    // ── Scroll-bar styling ──────────────────────────────────────────────────
+    // ── Estilização da barra de rolagem ──────────────────────────────────────
 
     public static void styleScrollBar(JScrollBar sb) {
         sb.setBackground(DesignSystem.bg());
@@ -85,7 +86,7 @@ public final class SwingHelper {
         });
     }
 
-    // ── Combo-box builder (alphabetical groups + dark theme) ────────────────
+    // ── Construtor de caixa de combinação (grupos alfabéticos + tema escuro) ──
 
     public static JComboBox<String> buildCombo(List<String> sortedEmails) {
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
@@ -110,6 +111,18 @@ public final class SwingHelper {
         combo.setOpaque(true);
         combo.setBorder(BorderFactory.createEmptyBorder());
         combo.setFocusable(false);
+        combo.setUI(new BasicComboBoxUI() {
+            @Override protected JButton createArrowButton() {
+                JButton button = new JButton("▾");
+                button.setFont(MONO_XS);
+                button.setForeground(DesignSystem.accent());
+                button.setBackground(DesignSystem.surface());
+                button.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 8));
+                button.setFocusPainted(false);
+                button.setContentAreaFilled(false);
+                return button;
+            }
+        });
 
         combo.setRenderer(new DefaultListCellRenderer() {
             @Override public Component getListCellRendererComponent(
@@ -126,9 +139,10 @@ public final class SwingHelper {
                     setBackground(DesignSystem.surface());
                     setEnabled(false);
                 } else {
-                    setFont(MONO_SM);
+                    setFont(index == -1 ? FontManager.getMonospacedBoldFont(12) : MONO_SM);
                     setForeground(sel ? DesignSystem.bg() : DesignSystem.ink());
                     setBackground(sel ? DesignSystem.accent() : DesignSystem.surface());
+                    setBorder(new EmptyBorder(4, index == -1 ? 0 : 8, 4, 8));
                 }
                 return this;
             }
@@ -166,7 +180,7 @@ public final class SwingHelper {
         return "";
     }
 
-    // ── Spinner styling ─────────────────────────────────────────────────────
+    // ── Estilização do seletor numérico (Spinner) ────────────────────────────
 
     public static void styleSpinner(JSpinner spinner) {
         spinner.setFont(MONO_MD);
@@ -193,7 +207,7 @@ public final class SwingHelper {
         }
     }
 
-    // ── Result text area ────────────────────────────────────────────────────
+    // ── Área de texto de resultado ───────────────────────────────────────────
 
     public static JTextArea resultArea() {
         JTextArea area = new JTextArea(10, 60);
@@ -216,7 +230,7 @@ public final class SwingHelper {
         return scroll;
     }
 
-    /** Prepend text to a JTextArea (most recent on top). */
+    /** Adiciona texto ao início de um JTextArea (o mais recente no topo). */
     public static void prepend(JTextArea area, String text) {
         area.setText(text + "\n" + area.getText());
         area.setCaretPosition(0);
@@ -240,7 +254,7 @@ public final class SwingHelper {
         return p;
     }
 
-    // ── Number formatting ───────────────────────────────────────────────────
+    // ── Formatação de números ────────────────────────────────────────────────
 
     public static String formatInt(int n) {
         return String.format("%,d", n).replace(',', '.');

@@ -20,7 +20,7 @@ import java.util.List;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Tab 04 - Critical path using inverse-weight Dijkstra.
+ * Aba 04 - Caminho crítico usando Dijkstra com peso inverso.
  */
 public final class CriticalPathPanel extends JPanel {
 

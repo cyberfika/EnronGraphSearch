@@ -7,30 +7,30 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- * Directed, weighted, labeled contact graph built from the Enron Email Dataset.
+ * Grafo de contatos direcionado, ponderado e rotulado construído a partir do Enron Email Dataset.
  *
- * <h2>Internal representation</h2>
- * <p>The graph uses an adjacency map of maps:
+ * <h2>Representação interna</h2>
+ * <p>O grafo usa um mapa de adjacência de mapas:
  * <pre>
  *   adjacency : Map&lt;Vertex, Map&lt;Vertex, Edge&gt;&gt;
  * </pre>
- * The outer map's key is the <em>origin</em> vertex. The inner map's key is the
- * <em>destination</em> vertex, and its value is the {@link Edge} between them.
- * This layout gives O(1) average-case lookup for both "does edge A→B exist?" and
- * "what are all neighbours of A?", which is essential for large graphs.</p>
+ * A chave do mapa externo é o vértice de <em>origem</em>. A chave do mapa interno é o 
+ * vértice de <em>destino</em>, e seu valor é a {@link Edge} entre eles. 
+ * Esta estrutura fornece busca em tempo médio O(1) tanto para "a aresta A→B existe?" 
+ * quanto para "quais são todos os vizinhos de A?", o que é essencial para grafos grandes.</p>
  *
- * <h2>Semantics</h2>
+ * <h2>Semântica</h2>
  * <ul>
- *   <li>Each vertex is a unique email address (the graph label).</li>
- *   <li>Each edge A→B records the number of messages sent from A to B (the weight).
- *       Adding the same edge again increments its weight instead of duplicating it.</li>
- *   <li>Degree (in or out) is counted as the number of <em>distinct</em> neighbours,
- *       not the sum of weights.</li>
+ *   <li>Cada vértice é um endereço de e-mail único (o rótulo do grafo).</li>
+ *   <li>Cada aresta A→B registra o número de mensagens enviadas de A para B (o peso). 
+ *       Adicionar a mesma aresta novamente incrementa seu peso em vez de duplicá-la.</li>
+ *   <li>O grau (de entrada ou de saída) é contado como o número de vizinhos <em>distintos</em>, 
+ *       não como a soma dos pesos.</li>
  * </ul>
  *
- * <p>This class implements {@link Serializable} so the built graph can be persisted
- * to a binary cache file and reloaded on subsequent runs without re-parsing the
- * entire dataset.</p>
+ * <p>Esta classe implementa {@link Serializable} para que o grafo construído possa ser 
+ * persistido em um arquivo de cache binário e recarregado em execuções subsequentes 
+ * sem a necessidade de reanalisar todo o dataset.</p>
  */
 public class ContactGraph implements Serializable {
 
@@ -38,39 +38,41 @@ public class ContactGraph implements Serializable {
     private static final long serialVersionUID = 2L;
 
     /**
-     * Index of all vertices keyed by their normalized email address.
-     * Provides O(1) vertex lookup by email string.
+     * Índice de todos os vértices indexados por seu endereço de e-mail normalizado.
+     * Fornece busca de vértice O(1) pela string do e-mail.
      */
     private final Map<String, Vertex> vertexIndex;
 
     /**
-     * Adjacency structure: origin → (destination → edge).
-     * Every vertex present in the graph has an entry here, even if it has no
-     * outgoing edges (its inner map will simply be empty).
+     * Estrutura de adjacência: origem → (destino → aresta).
+     * Todo vértice presente no grafo tem uma entrada aqui, mesmo que não tenha 
+     * arestas de saída (seu mapa interno estará simplesmente vazio).
      */
     private final Map<Vertex, Map<Vertex, Edge>> adjacency;
 
     /**
-     * Email addresses of the 150 Enron mailbox owners — i.e., the senders found
-     * in {@code sent} / {@code _sent_mail} folders. Used to populate the "From"
-     * combo box with only real dataset users, not external addresses.
+     * Endereços de e-mail dos 150 proprietários de caixas de correio da Enron — ou seja, 
+     * os remetentes encontrados nas pastas {@code sent} / {@code _sent_mail}. Usado para 
+     * preencher a caixa de combinação "De" apenas com usuários reais do dataset, 
+     * e não endereços externos.
      */
     private final Set<String> ownerEmails;
 
     /**
-     * Constructs an empty contact graph.
+     * Constrói um grafo de contatos vazio.
      */
     public ContactGraph() {
         this.vertexIndex  = new HashMap<>();
         this.adjacency    = new HashMap<>();
-        this.ownerEmails  = new TreeSet<>(); // sorted for predictable combo order
+        this.ownerEmails  = new TreeSet<>(); // ordenado para ordem previsível no combo box
     }
 
     /**
-     * Registers an email address as a mailbox owner (sender from a sent folder).
-     * Only these addresses appear in the "From" combo box of the search panel.
+     * Registra um endereço de e-mail como proprietário de uma caixa de correio 
+     * (remetente de uma pasta enviada). Apenas esses endereços aparecem na caixa 
+     * de combinação "De" do painel de busca.
      *
-     * @param email the owner's normalized email address.
+     * @param email o endereço de e-mail normalizado do proprietário.
      */
     public void addOwner(String email) {
         if (email != null && !email.isBlank()) {
@@ -79,27 +81,28 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns an unmodifiable, alphabetically sorted set of mailbox-owner emails.
-     * In dataset mode this corresponds to the 150 Enron users whose sent folders
-     * were processed. In demo mode it contains the hand-crafted senders.
+     * Retorna um conjunto imutável e ordenado alfabeticamente de e-mails de proprietários 
+     * de caixas de correio. No modo dataset, isso corresponde aos 150 usuários da Enron 
+     * cujas pastas de mensagens enviadas foram processadas. No modo demonstração, 
+     * contém os remetentes criados manualmente.
      *
-     * @return sorted set of owner email addresses; never {@code null}.
+     * @return conjunto ordenado de endereços de e-mail de proprietários; nunca {@code null}.
      */
     public Set<String> getOwnerEmails() {
         return Collections.unmodifiableSet(ownerEmails);
     }
 
     // -------------------------------------------------------------------------
-    // Mutation
+    // Mutação
     // -------------------------------------------------------------------------
 
     /**
-     * Ensures a vertex with the given email exists in the graph, creating it if
-     * necessary, and returns it.
+     * Garante que um vértice com o e-mail fornecido exista no grafo, criando-o se 
+     * necessário, e o retorna.
      *
-     * @param email the email address; must not be {@code null} or blank.
-     * @return the existing or newly created {@link Vertex}.
-     * @throws IllegalArgumentException if {@code email} is {@code null} or blank.
+     * @param email o endereço de e-mail; não deve ser {@code null} ou vazio.
+     * @return o {@link Vertex} existente ou recém-criado.
+     * @throws IllegalArgumentException se o {@code email} for {@code null} ou vazio.
      */
     public Vertex addVertex(String email) {
         if (email == null || email.isBlank()) {
@@ -114,16 +117,16 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Adds a directed edge from {@code originEmail} to {@code destinationEmail}.
+     * Adiciona uma aresta direcionada de {@code originEmail} para {@code destinationEmail}.
      *
-     * <p>If the edge already exists its weight is incremented by one. If either
-     * vertex does not yet exist it is created automatically. Self-loops
-     * (origin == destination) are silently ignored as they carry no meaningful
-     * information for the contact network.</p>
+     * <p>Se a aresta já existir, seu peso é incrementado em um. Se algum dos vértices 
+     * ainda não existir, ele será criado automaticamente. Loops próprios 
+     * (origem == destino) são ignorados silenciosamente, pois não carregam 
+     * informações significativas para a rede de contatos.</p>
      *
-     * @param originEmail      the sender's email address.
-     * @param destinationEmail the recipient's email address.
-     * @throws IllegalArgumentException if either address is {@code null} or blank.
+     * @param originEmail      o endereço de e-mail do remetente.
+     * @param destinationEmail o endereço de e-mail do destinatário.
+     * @throws IllegalArgumentException se qualquer um dos endereços for {@code null} ou vazio.
      */
     public void addEdge(String originEmail, String destinationEmail) {
         if (originEmail == null || originEmail.isBlank()) {
@@ -136,7 +139,7 @@ public class ContactGraph implements Serializable {
         String normOrigin = originEmail.trim().toLowerCase();
         String normDest   = destinationEmail.trim().toLowerCase();
 
-        // Ignore self-loops
+        // Ignorar loops próprios (self-loops)
         if (normOrigin.equals(normDest)) return;
 
         Vertex origin      = addVertex(normOrigin);
@@ -152,14 +155,14 @@ public class ContactGraph implements Serializable {
     }
 
     // -------------------------------------------------------------------------
-    // Queries
+    // Consultas
     // -------------------------------------------------------------------------
 
     /**
-     * Looks up a vertex by its email address.
+     * Procura um vértice pelo seu endereço de e-mail.
      *
-     * @param email the normalized or raw email to search for.
-     * @return an {@link Optional} containing the vertex, or empty if not found.
+     * @param email o e-mail normalizado ou bruto a ser pesquisado.
+     * @return um {@link Optional} contendo o vértice, ou vazio se não for encontrado.
      */
     public Optional<Vertex> findVertex(String email) {
         if (email == null || email.isBlank()) return Optional.empty();
@@ -167,10 +170,10 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns {@code true} if a vertex with the given email exists in the graph.
+     * Retorna {@code true} se um vértice com o e-mail fornecido existir no grafo.
      *
-     * @param email the email to check.
-     * @return {@code true} if found.
+     * @param email o e-mail para verificar.
+     * @return {@code true} se encontrado.
      */
     public boolean containsVertex(String email) {
         if (email == null || email.isBlank()) return false;
@@ -178,20 +181,20 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns an unmodifiable view of all vertices in the graph.
+     * Retorna uma visão imutável de todos os vértices do grafo.
      *
-     * @return collection of all vertices; never {@code null}.
+     * @return coleção de todos os vértices; nunca {@code null}.
      */
     public Collection<Vertex> getVertices() {
         return Collections.unmodifiableCollection(vertexIndex.values());
     }
 
     /**
-     * Returns an unmodifiable list of all edges in the graph.
+     * Retorna uma lista imutável de todas as arestas do grafo.
      *
-     * <p>This is O(V + E) as it flattens the adjacency map.</p>
+     * <p>Esta operação é O(V + E), pois achata o mapa de adjacência.</p>
      *
-     * @return list of all directed edges; never {@code null}.
+     * @return lista de todas as arestas direcionadas; nunca {@code null}.
      */
     public List<Edge> getEdges() {
         List<Edge> all = new ArrayList<>();
@@ -202,11 +205,11 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns the outgoing edges from the given vertex.
+     * Retorna as arestas de saída do vértice fornecido.
      *
-     * @param vertex the origin vertex; must not be {@code null}.
-     * @return unmodifiable list of outgoing edges; empty if the vertex has none.
-     * @throws IllegalArgumentException if {@code vertex} is {@code null}.
+     * @param vertex o vértice de origem; não deve ser {@code null}.
+     * @return lista imutável de arestas de saída; vazia se o vértice não tiver nenhuma.
+     * @throws IllegalArgumentException se o {@code vertex} for {@code null}.
      */
     public List<Edge> getOutEdges(Vertex vertex) {
         if (vertex == null) throw new IllegalArgumentException("Vertex must not be null.");
@@ -216,15 +219,15 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns the incoming edges to the given vertex.
+     * Retorna as arestas de entrada para o vértice fornecido.
      *
-     * <p>Because the adjacency map is indexed by origin, computing in-edges requires
-     * a full scan of all vertices — O(V + E). This is acceptable for the top-20
-     * queries which run once at startup.</p>
+     * <p>Como o mapa de adjacência é indexado pela origem, o cálculo das arestas 
+     * de entrada exige uma varredura completa de todos os vértices — O(V + E). 
+     * Isso é aceitável para as consultas dos top-20 que rodam uma única vez na inicialização.</p>
      *
-     * @param vertex the destination vertex; must not be {@code null}.
-     * @return unmodifiable list of incoming edges; empty if none.
-     * @throws IllegalArgumentException if {@code vertex} is {@code null}.
+     * @param vertex o vértice de destino; não deve ser {@code null}.
+     * @return lista imutável de arestas de entrada; vazia se não houver nenhuma.
+     * @throws IllegalArgumentException se o {@code vertex} for {@code null}.
      */
     public List<Edge> getInEdges(Vertex vertex) {
         if (vertex == null) throw new IllegalArgumentException("Vertex must not be null.");
@@ -237,20 +240,20 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns the total number of vertices in the graph.
+     * Retorna o número total de vértices no grafo.
      *
-     * @return vertex count.
+     * @return contagem de vértices.
      */
     public int vertexCount() {
         return vertexIndex.size();
     }
 
     /**
-     * Returns the total number of directed edges in the graph.
+     * Retorna o número total de arestas direcionadas no grafo.
      *
-     * <p>Note: this counts distinct edges, not the sum of their weights.</p>
+     * <p>Nota: isto conta arestas distintas, não a soma de seus pesos.</p>
      *
-     * @return edge count.
+     * @return contagem de arestas.
      */
     public int edgeCount() {
         int count = 0;
@@ -261,12 +264,12 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns the out-degree of a vertex: the number of distinct recipients it
-     * has ever sent at least one message to.
+     * Retorna o grau de saída de um vértice: o número de destinatários distintos 
+     * para os quais ele enviou pelo menos uma mensagem.
      *
-     * @param vertex the vertex to query; must not be {@code null}.
-     * @return out-degree, or 0 if the vertex has no outgoing edges.
-     * @throws IllegalArgumentException if {@code vertex} is {@code null}.
+     * @param vertex o vértice a ser consultado; não deve ser {@code null}.
+     * @return grau de saída, ou 0 se o vértice não tiver arestas de saída.
+     * @throws IllegalArgumentException se o {@code vertex} for {@code null}.
      */
     public int outDegree(Vertex vertex) {
         if (vertex == null) throw new IllegalArgumentException("Vertex must not be null.");
@@ -275,12 +278,12 @@ public class ContactGraph implements Serializable {
     }
 
     /**
-     * Returns the in-degree of a vertex: the number of distinct senders who have
-     * sent at least one message to this vertex.
+     * Retorna o grau de entrada de um vértice: o número de remetentes distintos 
+     * que enviaram pelo menos uma mensagem para este vértice.
      *
-     * @param vertex the vertex to query; must not be {@code null}.
-     * @return in-degree, or 0 if no one has sent to this vertex.
-     * @throws IllegalArgumentException if {@code vertex} is {@code null}.
+     * @param vertex o vértice a ser consultado; não deve ser {@code null}.
+     * @return grau de entrada, ou 0 se ninguém tiver enviado para este vértice.
+     * @throws IllegalArgumentException se o {@code vertex} for {@code null}.
      */
     public int inDegree(Vertex vertex) {
         if (vertex == null) throw new IllegalArgumentException("Vertex must not be null.");

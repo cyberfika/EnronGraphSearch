@@ -1,0 +1,795 @@
+\UseRawInputEncoding
+\documentclass[12pt,openright,twoside,a4paper,english,brazilian,hidelinks]{abntex2}
+
+% Pacotes essenciais
+\usepackage[utf8]{inputenc}        % UTF-8
+\usepackage[T1]{fontenc}           % Fontes T1
+\usepackage{lmodern}               % Fontes Latin Modern
+
+\usepackage{xcolor}                % Cores
+\usepackage{graphicx}              % Imagens
+\usepackage{amsmath}               % Matemática
+\usepackage{listings}              % Código fonte
+\usepackage{xspace}                % Espaçamento automático
+\usepackage{float}                 % Posicionamento de figuras
+\usepackage[hidelinks]{hyperref}   % Hiperlinks sem caixas
+
+% Diretório de gráficos e diagramas
+\graphicspath{{diagrams-rendered/}}
+
+% Configuração de código fonte
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    literate={é}{{\'e}}1,
+    language=Java,
+    frame=single,
+    rulecolor=\color{black!30}
+}
+
+% Espaçamento 1.5
+\renewcommand{\baselinestretch}{1.5}
+
+% ============================================================================
+% INFORMAÇÕES DE IDENTIFICAÇÃO PESSOAL (PREENCHER CONFORME NECESSÁRIO)
+% ============================================================================
+
+\newcommand{\autorNome}{JAFTE CARNEIRO FAGUNDES DA SILVA}
+\renewcommand{\instituicao}{ESCOLA POLITÉCNICA}
+\newcommand{\universidade}{[PONTIFÍCIA UNIVERSIDADE CATÓLICA DO PARANÁ]}
+\newcommand{\curso}{CIÊNCIA DA COMPUTAÇÃO}
+\newcommand{\disciplina}{RESOLUÇÃO DE PROBLEMAS COM GRAFOS}
+\newcommand{\professsor}{FABRÍCIO ENEMBRECK }
+\newcommand{\semestre}{2026.1}
+\newcommand{\dataprojeto}{maio de 2026}
+
+% ============================================================================
+% CONFIGURAÇÃO DO DOCUMENTO
+% ============================================================================
+
+\titulo{Analisador de Contatos Enron: Implementação de Algoritmos de Grafos\\em Java}
+
+\autor{\autorNome}
+
+
+
+\local{Curitiba}
+
+\data{\dataprojeto}
+
+\preambulo{
+    Relatório de Aprendizado apresentado como trabalho prático da disciplina
+    \textit{\disciplina{}} no curso de \curso{} da \universidade{}.
+
+    \vspace*{\fill}
+
+    \noindent\textbf{Orientador:} \professsor{}
+
+    \vspace*{\fill}
+}
+
+\makeindex
+
+% ============================================================================
+% DOCUMENTO
+% ============================================================================
+
+\begin{document}
+
+    \selectlanguage{brazilian}
+
+    \frenchspacing
+
+    \imprimircapa
+
+% FOLHA DE ROSTO
+    \begin{folhaderosto}
+        \begin{center}
+            \textbf{\autorNome} \\
+        \end{center}
+
+        \vspace*{3cm}
+
+        \begin{center}
+            \textbf{\imprimirtitulo}
+        \end{center}
+
+        \vspace*{3cm}
+
+        \begin{flushleft}
+            \preambulo{}
+        \end{flushleft}
+
+        \vspace*{\fill}
+
+        \begin{center}
+            Data: \imprimirdata
+        \end{center}
+    \end{folhaderosto}
+
+% SUMÁRIO
+    \pdfbookmark[0]{\contentsname}{toc}
+    \tableofcontents*
+    \cleardoublepage
+
+% ============================================================================
+% RESUMO
+% ============================================================================
+
+    \begin{resumo}
+        Este relatório documenta o desenvolvimento de um analisador de contatos baseado no
+        \textit{Enron Email Dataset} público, implementado em Java 17 como exercício prático
+        da disciplina \disciplina{}. O projeto implementa, do zero, algoritmos clássicos de
+        teoria dos grafos --- busca em profundidade (DFS), busca em largura (BFS), cálculo de
+        distância e caminho crítico via Dijkstra adaptado --- aplicados a um grafo direcionado,
+        ponderado e rotulado que modela a rede de comunicação entre funcionários da empresa.
+
+        A arquitetura segue rigorosamente os princípios SOLID de engenharia de software,
+        com separação clara de responsabilidades em 7 pacotes e 29 classes. Todos os algoritmos
+        tratam ciclos explicitamente via conjuntos de visitados. A interface gráfica, construída
+        com Java Swing, oferece 4 abas de análise interativa com visualização de grafos via
+        GraphStream.
+
+        \textbf{Palavras-chave:} Grafos. DFS. BFS. Dijkstra. Java. Enron. Estruturas de Dados.
+    \end{resumo}
+
+% ============================================================================
+% INTRODUÇÃO
+% ============================================================================
+
+    \chapter{Introdução}
+
+    A teoria dos grafos é uma das áreas fundamentais da ciência da computação, com aplicações
+    práticas em redes sociais, sistemas de roteamento, análise de dependências e muitas outras
+    áreas. Neste trabalho, desenvolvemos um analisador de contatos baseado no \textit{Enron
+    Email Dataset}, um conjunto de dados públicos contendo mais de 600 mil mensagens de e-mail
+    de aproximadamente 150 funcionários da empresa Enron, coletadas entre 1998 e 2002.
+
+    O objetivo do projeto foi consolidar conhecimentos sobre estruturas de dados e algoritmos
+    de grafos através de uma implementação prática completa, desde a representação do grafo até
+    a execução de consultas complexas. Para isso, implementamos:
+
+    \begin{enumerate}
+        \item Um grafo direcionado, ponderado e rotulado em memória
+        \item Busca em profundidade (DFS) iterativa
+        \item Busca em largura (BFS) com garantia de caminho mínimo
+        \item Cálculo de distância D entre nós
+        \item Caminho crítico aproximado via Dijkstra adaptado com custo inverso
+    \end{enumerate}
+
+    Todos os algoritmos foram implementados \textbf{do zero}, sem uso de bibliotecas prontas
+    de estruturas de dados ou algoritmos, utilizando apenas Java Collections (HashMap, HashSet,
+    ArrayList, ArrayDeque) e a biblioteca padrão do Java 17.
+
+    ---
+
+    \section{Motivação}
+
+    A análise de redes de comunicação é relevante para entender padrões de colaboração,
+    identificar pessoas-chave em organizações e detectar caminhos críticos de informação.
+    O \textit{Enron Email Dataset} representa um caso de estudo real, permitindo explorar
+    estes tópicos com dados autênticos.
+
+    ---
+
+% ============================================================================
+% REFERENCIAL TEÓRICO
+% ============================================================================
+
+    \chapter{Referencial Teórico}
+
+    \section{Grafos Direcionados, Ponderados e Rotulados}
+
+    Um grafo é uma estrutura matemática composta por um conjunto de vértices (ou nós) e um
+    conjunto de arestas (ou arcos) que conectam pares de vértices. Neste projeto, utilizamos:
+
+    \begin{itemize}
+        \item \textbf{Direcionado}: cada aresta tem uma direção (origem → destino). A aresta
+        $A \to B$ é distinta de $B \to A$.
+        \item \textbf{Ponderado}: cada aresta tem um peso (neste caso, a frequência de
+        mensagens enviadas de origem para destino).
+        \item \textbf{Rotulado}: cada vértice tem um rótulo (o endereço de e-mail do indivíduo).
+    \end{itemize}
+
+    \textbf{Representação interna:} lista de adjacência via mapa de mapas:
+
+    \begin{lstlisting}[language=Java]
+Map<Vertex, Map<Vertex, Edge>> adjacency
+// adjacency.get(origin).get(destination) = Edge com peso
+    \end{lstlisting}
+
+    Esta representação oferece $O(1)$ lookup de arestas e $O(k)$ enumeração de vizinhos,
+    onde $k$ é o grau do vértice.
+
+    ---
+
+    \section{Busca em Profundidade (DFS)}
+
+    A busca em profundidade é um algoritmo de traversal que explora o grafo ``o máximo
+    possível'' em cada ramo antes de retroceder.
+
+    \textbf{Características:}
+    \begin{itemize}
+        \item Usa uma \textbf{pilha} (LIFO)
+        \item Complexidade: $O(V + E)$
+        \item Não garante caminho mínimo
+        \item Útil para detectar componentes conexas e ciclos
+    \end{itemize}
+
+    \textbf{Pseudocódigo:}
+
+    \begin{lstlisting}[language=Java]
+DFS(origem, destino):
+    stack.push(origem)
+    visited = {}
+    predecessor = {}
+
+    while stack not empty:
+        current = stack.pop()
+        if current in visited: continue
+        visited.add(current)
+
+        if current == destino:
+            return reconstructPath(predecessor, origem, destino)
+
+        for each neighbor in adjacency[current]:
+            if neighbor not in visited:
+                predecessor[neighbor] = current
+                stack.push(neighbor)
+
+    return empty  // nenhum caminho encontrado
+    \end{lstlisting}
+
+    ---
+
+    \section{Busca em Largura (BFS)}
+
+    A busca em largura explora o grafo nível por nível, visitando todos os vizinhos a
+    distância $k$ antes de explorar distância $k+1$.
+
+    \textbf{Características:}
+    \begin{itemize}
+        \item Usa uma \textbf{fila} (FIFO)
+        \item Complexidade: $O(V + E)$
+        \item \textbf{Garante caminho com menor número de arestas}
+        \item Marca visitados ao \textit{enfileirar}, não ao desenfileirar
+    \end{itemize}
+
+    \textbf{Vantagem crítica:} em grafos com ciclos, marcar visitados ao enfileirar previne
+    que o mesmo vértice seja adicionado à fila múltiplas vezes.
+
+    ---
+
+    \section{Algoritmo de Dijkstra}
+
+    O algoritmo de Dijkstra calcula o caminho de menor custo entre um nó de origem e todos
+    os demais nós em um grafo com pesos não-negativos.
+
+    \textbf{Características:}
+    \begin{itemize}
+        \item Usa \textbf{fila de prioridade} (min-heap)
+        \item Complexidade: $O(E \log V)$ com heap binário
+        \item Retorna custo mínimo acumulado
+    \end{itemize}
+
+    \subsection{Adaptação: Custo Inverso para Maximizar Dependência}
+
+    Neste projeto, adaptamos Dijkstra para encontrar o caminho de \textbf{máxima dependência}
+    de comunicação. A intuição é:
+
+    \begin{itemize}
+        \item Peso alto = muitos e-mails = relação forte
+        \item Para favorecer arestas pesadas, convertemos: $\text{custo} = \frac{1}{\text{peso}}$
+        \item Dijkstra minimiza custo $\Rightarrow$ prefere arestas pesadas
+    \end{itemize}
+
+    \textbf{Exemplo:}
+    \begin{itemize}
+        \item Aresta com peso 10: custo = 0.1
+        \item Aresta com peso 1: custo = 1.0
+        \item Dijkstra minimiza soma de custos $\Rightarrow$ escolhe aresta com peso 10
+    \end{itemize}
+
+    ---
+
+    \section{Tratamento de Ciclos}
+
+    Todos os algoritmos implementados tratam ciclos explicitamente:
+
+    \begin{itemize}
+        \item \textbf{DFS}: conjunto \texttt{visited} previne revisitas
+        \item \textbf{BFS}: marca visitados ao enfileirar
+        \item \textbf{Dijkstra}: conjunto \texttt{settled} garante cada vértice é processado uma vez
+    \end{itemize}
+
+% ============================================================================
+% METODOLOGIA E IMPLEMENTAÇÃO
+% ============================================================================
+
+    \chapter{Metodologia e Implementação}
+
+    \section{Arquitetura em Camadas}
+
+    O projeto foi organizado em 7 pacotes (camadas):
+
+    \begin{enumerate}
+        \item \textbf{model}: classes de dados puros (Vertex, Edge, PathResult)
+        \item \textbf{graph}: estrutura do grafo (ContactGraph)
+        \item \textbf{service}: algoritmos (DFS, BFS, DistanceCalculator, CriticalPathService)
+        \item \textbf{parser}: leitura e parsing do dataset Enron
+        \item \textbf{util}: utilitários (validação de e-mail, fontes)
+        \item \textbf{design}: sistema de temas (cores, dark/light)
+        \item \textbf{view}: interface gráfica (Swing + GraphStream)
+    \end{enumerate}
+
+    Esta separação segue os princípios SOLID:
+
+    \begin{itemize}
+        \item \textbf{SRP} (Single Responsibility): cada classe tem uma responsabilidade
+        \item \textbf{OCP} (Open/Closed): extensível sem modificar código existente
+        \item \textbf{DIP} (Dependency Inversion): depende de abstrações, não de implementações
+    \end{itemize}
+
+    ---
+
+    \section{Estrutura de Dados: Grafo com Lista de Adjacência}
+
+    \begin{lstlisting}[language=Java]
+public class ContactGraph implements Serializable {
+    private final Map<String, Vertex> vertexIndex;  // email -> Vertex
+    private final Map<Vertex, Map<Vertex, Edge>> adjacency;  // origem -> (destino -> Edge)
+    private final Set<String> ownerEmails;  // senders (150 usuários Enron)
+}
+    \end{lstlisting}
+
+    \textbf{Operações:}
+
+    \begin{itemize}
+        \item \texttt{addVertex(email)}: $O(1)$ médio (HashMap.computeIfAbsent)
+        \item \texttt{addEdge(from, to)}: $O(1)$ médio; incrementa peso se existe
+        \item \texttt{outDegree(v)}: $O(1)$ (tamanho do mapa interno)
+        \item \texttt{inDegree(v)}: $O(V + E)$ (scan necessário)
+        \item \texttt{vertexCount()}: $O(1)$
+        \item \texttt{edgeCount()}: $O(V)$ (soma de tamanhos de mapas internos)
+    \end{itemize}
+
+    ---
+
+    \section{Algoritmos Implementados}
+
+    \subsection{1. Busca em Profundidade (DFS)}
+
+    \textbf{Classe:} \texttt{DepthFirstSearch.java}
+
+    \textbf{Método principal:}
+
+    \begin{lstlisting}[language=Java]
+public PathResult search(ContactGraph graph, String originEmail, String destinationEmail)
+    \end{lstlisting}
+
+    \textbf{Detalhes de implementação:}
+
+    \begin{itemize}
+        \item Usa \texttt{ArrayDeque} como pilha (evita StackOverflowError)
+        \item Mantém conjunto \texttt{visited} para ciclos
+        \item Mapa \texttt{predecessor} para reconstrução de caminho
+        \item Retorna \texttt{PathResult} com lista de vértices ordenados
+    \end{itemize}
+
+    \textbf{Garantias:}
+    \begin{itemize}
+        \item Encontra caminho se existir (completo)
+        \item Não necessariamente o mais curto (unlike BFS)
+        \item Sem loops infinitos em ciclos
+    \end{itemize}
+
+    ---
+
+    \subsection{2. Busca em Largura (BFS)}
+
+    \textbf{Classe:} \texttt{BreadthFirstSearch.java}
+
+    \textbf{Método principal:}
+
+    \begin{lstlisting}[language=Java]
+public PathResult search(ContactGraph graph, String originEmail, String destinationEmail)
+    \end{lstlisting}
+
+    \textbf{Detalhe crítico:} marca visitados ao \textbf{enfileirar}, não ao desenfileirar.
+
+    \begin{lstlisting}[language=Java]
+queue.add(source);
+visited.add(source);  // <- Marca AQUI, não ao dequeue
+predecessor.put(source, null);
+
+while (!queue.isEmpty()) {
+    Vertex current = queue.poll();
+    // ... processar
+    for (Edge edge : graph.getOutEdges(current)) {
+        Vertex neighbour = edge.getDestination();
+        if (!visited.contains(neighbour)) {
+            visited.add(neighbour);     // <- Marca ao enfileirar
+            predecessor.put(neighbour, current);
+            queue.add(neighbour);
+        }
+    }
+}
+    \end{lstlisting}
+
+    \textbf{Garantia:} retorna caminho com \textbf{menor número de arestas}.
+
+    ---
+
+    \subsection{3. Distância D (BFS por Níveis)}
+
+    \textbf{Classe:} \texttt{DistanceCalculator.java}
+
+    \textbf{Método principal:}
+
+    \begin{lstlisting}[language=Java]
+public List<Vertex> getVerticesAtDistance(ContactGraph graph, String originEmail, int distance)
+    \end{lstlisting}
+
+    \textbf{Lógica:}
+
+    \begin{itemize}
+        \item Mantém lista de vértices em ``nível atual''
+        \item Para cada iteração de 1 a \texttt{distance}:
+        \begin{itemize}
+            \item Expande todos vizinhos de saída do nível atual
+            \item Adiciona ao nível seguinte (se não visitado)
+        \end{itemize}
+        \item Retorna apenas vértices do nível exato \texttt{distance}
+    \end{itemize}
+
+    \textbf{Casos especiais:}
+    \begin{itemize}
+        \item $D = 0$: retorna apenas o nó de origem
+        \item Grafo esgotado antes de $D$: retorna lista vazia
+    \end{itemize}
+
+    ---
+
+    \subsection{4. Caminho Crítico (Dijkstra Adaptado)}
+
+    \textbf{Classe:} \texttt{CriticalPathService.java}
+
+    \textbf{Método principal:}
+
+    \begin{lstlisting}[language=Java]
+public PathResult computeCriticalPath(ContactGraph graph, String originEmail, String destinationEmail)
+    \end{lstlisting}
+
+    \textbf{Adaptação chave:}
+
+    \begin{lstlisting}[language=Java]
+// custo inverso favorece arestas pesadas
+double newCost = dist.get(current) + edge.getInverseCost();  // 1.0 / weight
+    \end{lstlisting}
+
+    \textbf{Saída:}
+
+    \begin{itemize}
+        \item Lista de vértices no caminho
+        \item Custo inverso total (métrica de Dijkstra)
+        \item Dependência acumulada (soma dos pesos originais)
+    \end{itemize}
+
+    ---
+
+    \section{Leitura e Parsing do Dataset}
+
+    \textbf{Classe:} \texttt{EnronDatasetReader.java}
+
+    \textbf{Fluxo:}
+
+    \begin{enumerate}
+        \item Escaneia diretório \texttt{maildir/} (150 usuários)
+        \item Para cada usuário, lê subpastas \texttt{sent/} e \texttt{\_sent\_mail/}
+        \item \textbf{Deduplicação}: calcula SHA-256 de cada arquivo
+        \begin{itemize}
+            \item Se mesmo hash em \texttt{sent/} e \texttt{\_sent\_mail/}: processa apenas uma vez
+            \item Evita inflate artificial de pesos
+        \end{itemize}
+        \item Para cada arquivo único:
+        \begin{itemize}
+            \item Parse com \texttt{EmailParser} (RFC 2822)
+            \item Extrai remetente (From:) e destinatários (To:)
+            \item Normaliza e-mails (lowercase, trim)
+            \item Adiciona aresta para cada destinatário
+        \end{itemize}
+        \item Serializa grafo em \texttt{graph.bin} para cache
+    \end{enumerate}
+
+    \textbf{Performance:}
+
+    \begin{itemize}
+        \item Primeira execução: 1-3 minutos (scan completo + parse)
+        \item Execuções subsequentes: < 1 segundo (carrega cache)
+        \item Flag \texttt{--rebuild} força re-parse
+    \end{itemize}
+
+% ============================================================================
+% APRENDIZADOS E CONCLUSÕES
+% ============================================================================
+
+    \chapter{Aprendizados e Conclusões}
+
+    \section{Conceitos Reforçados}
+
+    \subsection{Estruturas de Dados}
+
+    \begin{itemize}
+        \item \textbf{Maps e Sets}: eficiência de lookup e membership testing
+        \item \textbf{Listas vs. Deques}: LIFO (pilha) vs. FIFO (fila) e suas implicações
+        \item \textbf{Filas de prioridade}: heap binário para Dijkstra eficiente
+        \item \textbf{Representação de grafos}: adjacência vs. matriz vs. edge list
+    \end{itemize}
+
+    \subsection{Algoritmos de Grafos}
+
+    \begin{itemize}
+        \item \textbf{DFS e BFS}: diferenças semânticas e quando usar cada uma
+        \item \textbf{Tratamento de ciclos}: importância de marcar visitados
+        \item \textbf{Dijkstra}: otimização com fila de prioridade
+        \item \textbf{Adaptações:} como modificar algoritmos para problemas específicos (custo inverso)
+    \end{itemize}
+
+    \subsection{Engenharia de Software}
+
+    \begin{itemize}
+        \item \textbf{SRP:} código mais testável e manutenível
+        \item \textbf{Documentação:} JavaDoc não é \"overhead'', é comunicação
+        \item \textbf{Cache:} serialização para performance (graph.bin)
+        \item \textbf{Tratamento de erros:} validação robusta de entradas
+    \end{itemize}
+
+    ---
+
+    \section{Desafios Enfrentados}
+
+    \begin{enumerate}
+        \item \textbf{Deduplicação}: como identificar e-mails duplicados entre pastas?
+        \textbf{Solução:} SHA-256 hashing.
+
+        \item \textbf{Performance}: parsing de 600 mil arquivos leva tempo.
+        \textbf{Solução:} cache binário com Java Serialization.
+
+        \item \textbf{Dijkstra adaptado}: como inverter a semântica de custo?
+        \textbf{Solução:} aplicar transformação $\text{custo} = 1/\text{peso}$.
+
+        \item \textbf{Ciclos}: evitar loops infinitos em grafos com ciclos.
+        \textbf{Solução:} marcar visitados antes de explorar vizinhos.
+    \end{enumerate}
+
+    ---
+
+    \section{Possíveis Extensões}
+
+    \begin{itemize}
+        \item Implementar detecção de comunidades (ex: algoritmo de Louvain)
+        \item Adicionar análise de centralidade (betweenness, closeness)
+        \item Suportar grafos não-direcionados
+        \item Exportar grafo em formato GraphML ou Gephi
+        \item Paralelizar parsing com Java Stream parallelism
+        \item Adicionar testes unitários (JUnit)
+    \end{itemize}
+
+    ---
+
+    \section{Conclusão}
+
+    Este projeto foi uma aplicação prática e abrangente dos conceitos de estruturas de dados
+    e algoritmos de grafos. Através da implementação, do zero, de DFS, BFS, cálculo de distância
+    e Dijkstra adaptado, consolidei entendimento profundo sobre:
+
+    \begin{itemize}
+        \item Como diferentes estratégias de traversal afetam o resultado
+        \item Importância de estruturas de dados eficientes (map vs. array)
+        \item Trade-offs entre espaço e tempo
+        \item Aplicação de conceitos teóricos em problemas reais
+    \end{itemize}
+
+    A arquitetura em camadas e a aderência aos princípios SOLID demonstraram que código bem
+    estruturado é essencial não apenas para manutenibilidade, mas também para facilitar testes
+    e validação.
+
+    ---
+
+
+
+% ============================================================================
+% APÊNDICES
+% ============================================================================
+
+    \appendix
+
+    \chapter{Diagramas UML}
+
+    \section{Diagrama de Classes}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-classes.png}
+        \caption{Diagrama UML de Classes do Analisador Enron: estrutura completa com 7 pacotes, 29 classes e relacionamentos de dependência.}
+        \label{fig:diagrama-classes}
+    \end{figure}
+
+    Principais classes por pacote:
+
+    \begin{itemize}
+        \item \textbf{Model:} Vertex, Edge, PathResult, DegreeResult, EmailMessage
+        \item \textbf{Graph:} ContactGraph
+        \item \textbf{Service:} DepthFirstSearch, BreadthFirstSearch, DistanceCalculator, CriticalPathService, ContactAnalyzer
+        \item \textbf{Parser:} EmailParser, EnronDatasetReader
+        \item \textbf{View:} SearchPanel, GraphVisualizer, TweaksPanel
+    \end{itemize}
+
+    ---
+
+    \section{Diagrama de Casos de Uso}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.90\textwidth]{diagrama-caso-uso.png}
+        \caption{Diagrama UML de Casos de Uso: 9 operações principais entre usuário e o sistema de análise.}
+        \label{fig:diagrama-caso-uso}
+    \end{figure}
+
+    Principais casos de uso:
+
+    \begin{enumerate}
+        \item Carregar Dataset (Enron Email files)
+        \item Executar Demo Mode (5 nós de teste)
+        \item Ver Visão Geral (estatísticas do grafo)
+        \item Buscar Caminho (DFS/BFS)
+        \item Consultar Distância D
+        \item Calcular Caminho Crítico (Dijkstra)
+        \item Visualizar Top-N Grafo (nós de maior grau)
+        \item Visualizar Ego Network (K saltos)
+        \item Toggle Tema (Dark/Light Mode)
+    \end{enumerate}
+
+    ---
+
+    \section{Diagramas de Sequência}
+
+    \subsection{Sequência de Construção do Grafo}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{sequencia-construcao-grafo.png}
+        \caption{Diagrama de Sequência: fluxo de leitura, parsing e construção do grafo a partir do dataset Enron.}
+        \label{fig:sequencia-construcao}
+    \end{figure}
+
+    \subsection{Sequência de Busca (DFS/BFS)}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{sequencia-busca.png}
+        \caption{Diagrama de Sequência: execução de busca em profundidade (DFS) e busca em largura (BFS).}
+        \label{fig:sequencia-busca}
+    \end{figure}
+
+    \subsection{Sequência de Caminho Crítico}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{sequencia-caminho-critico.png}
+        \caption{Diagrama de Sequência: execução do algoritmo de Dijkstra adaptado para calcular caminho crítico de comunicação.}
+        \label{fig:sequencia-critico}
+    \end{figure}
+
+    ---
+
+    \section{Diagrama de Componentes}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-componentes.png}
+        \caption{Diagrama UML de Componentes: decomposição arquitetural em 7 módulos (Model, Graph, Service, Parser, Util, Design, View) e suas dependências.}
+        \label{fig:diagrama-componentes}
+    \end{figure}
+
+    ---
+
+    \section{Diagrama de Domínio}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-dominio.png}
+        \caption{Diagrama UML de Domínio: conceitos fundamentais do problema (Email, Pessoa, Organização, Contato) e seus relacionamentos.}
+        \label{fig:diagrama-dominio}
+    \end{figure}
+
+    ---
+
+    \section{Diagrama de Atividade}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-atividade.png}
+        \caption{Diagrama UML de Atividade: fluxo de processamento desde carregamento do dataset até visualização dos resultados.}
+        \label{fig:diagrama-atividade}
+    \end{figure}
+
+    ---
+
+    \section{Diagrama de Estado}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-estado.png}
+        \caption{Diagrama UML de Estado: ciclo de vida da aplicação, transições entre modos (Demo, Analysis, Visualization).}
+        \label{fig:diagrama-estado}
+    \end{figure}
+
+    ---
+
+    \section{Diagrama de Comunicação}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.95\textwidth]{diagrama-comunicacao.png}
+        \caption{Diagrama UML de Comunicação: interações entre componentes durante execução de operações de análise.}
+        \label{fig:diagrama-comunicacao}
+    \end{figure}
+
+    ---
+
+    \chapter{Exemplos de Saída}
+
+    \section{Modo Demonstração}
+
+    \begin{lstlisting}[language=bash]
+$ mvn exec:java
+
+=== DEMO MODE ===
+
+--- 1. GRAPH STATISTICS ---
+  Vertices : 5
+  Edges    : 6
+
+--- 2. TOP 20 OUT-DEGREE (most active senders) ---
+   1. alice@company.com (degree=2)
+   2. bob@company.com (degree=2)
+   3. carol@company.com (degree=1)
+   4. dave@company.com (degree=1)
+
+--- 3. TOP 20 IN-DEGREE (most contacted recipients) ---
+   1. dave@company.com (degree=2)
+   2. eve@company.com (degree=2)
+   3. bob@company.com (degree=1)
+   4. carol@company.com (degree=1)
+
+--- 4-7. INTERACTIVE SEARCH PANEL ---
+  Use the GUI windows to run DFS, BFS, Distance D and Critical Path.
+
+[Janela Swing é exibida]
+    \end{lstlisting}
+
+    ---
+
+    \section{Consulta BFS no Demo}
+
+    \begin{lstlisting}
+Origem: alice@company.com
+Destino: eve@company.com
+Algoritmo: BFS
+
+RESULTADO:
+alice@company.com -> bob@company.com -> eve@company.com
+
+Comprimento: 2 arestas
+Custo total das arestas: 2 mensagens (bob->eve tem peso 1)
+    \end{lstlisting}
+
+    ---
+
+\end{document}

@@ -3,8 +3,8 @@ package br.edu.enron.util;
 import java.awt.*;
 
 /**
- * Cross-platform font manager.
- * Selects appropriate fonts for Windows, macOS, and Linux.
+ * Gerenciador de fontes multiplataforma.
+ * Seleciona as fontes apropriadas para Windows, macOS e Linux.
  */
 public class FontManager {
 
@@ -23,7 +23,7 @@ public class FontManager {
     }
 
     public static Font getSansSerifFont(int size) {
-        // Use system sans-serif that's consistent
+        // Usar fonte sem serifa do sistema que seja consistente
         String family = IS_MAC ? "Helvetica Neue" : IS_WINDOWS ? "Segoe UI" : "SansSerif";
         return new Font(family, Font.PLAIN, size);
     }
