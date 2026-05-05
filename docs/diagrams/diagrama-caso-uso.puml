@@ -1,0 +1,44 @@
+@startuml Caso_de_Uso
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+title Diagrama de Caso de Uso — Enron Graph Analyzer
+
+actor "Usuario" as U
+
+rectangle "Enron Graph Analyzer" {
+
+    usecase "Carregar Dataset\n(maildir)" as UC1
+    usecase "Executar Modo Demo" as UC2
+    usecase "Visualizar Visao Geral\n(estatisticas + leaderboard)" as UC3
+    usecase "Buscar Caminho\n(BFS / DFS)" as UC4
+    usecase "Consultar Distancia D\n(vertices a D arestas)" as UC5
+    usecase "Calcular Caminho Critico\n(Dijkstra adaptado)" as UC6
+    usecase "Visualizar Grafo Top-N" as UC7
+    usecase "Visualizar Ego Network\n(K saltos)" as UC8
+    usecase "Alternar Tema\n(Dark / Light)" as UC9
+
+    usecase "Parsear Emails" as UC10
+    usecase "Construir Grafo" as UC11
+    usecase "Renderizar Subgrafo\n(GraphStream)" as UC12
+
+    UC1 ..> UC10 : <<include>>
+    UC1 ..> UC11 : <<include>>
+    UC4 ..> UC12 : <<include>>
+    UC6 ..> UC12 : <<include>>
+    UC7 ..> UC12 : <<include>>
+    UC8 ..> UC12 : <<include>>
+}
+
+U --> UC1
+U --> UC2
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+U --> UC7
+U --> UC8
+U --> UC9
+
+@enduml

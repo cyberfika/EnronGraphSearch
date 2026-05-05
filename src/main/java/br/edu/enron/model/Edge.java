@@ -1,5 +1,6 @@
 package br.edu.enron.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -20,7 +21,9 @@ import java.util.Objects;
  * edge (strong communication dependency) is mapped to a low cost, so the shortest
  * path through inverse costs corresponds to the path of maximum dependency.</p>
  */
-public final class Edge {
+public final class Edge implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** The sender vertex — source of the directed edge. */
     private final Vertex origin;

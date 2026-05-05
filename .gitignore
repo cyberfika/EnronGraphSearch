@@ -19,7 +19,7 @@ bin/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
+/dist/ Veja novamen
 /nbdist/
 /.nb-gradle/
 
@@ -30,10 +30,10 @@ bin/
 .DS_Store
 
 
-/data/
-/data/*
-*.gz
-*.tar.gz
+/data/maildir/*
+/data/enron_mail_20150507.tar.gz
 
 .claude
 .claude/*
+
+/target/*

@@ -1,0 +1,81 @@
+@startuml Sequencia_Construcao_Grafo
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title Graph Construction Sequence
+
+actor User
+participant "Main" as M
+participant "DesignSystem" as DS
+participant "EnronDatasetReader" as R
+participant "EmailParser" as P
+participant "EmailMessage" as EM
+participant "ContactGraph" as G
+participant "SearchPanel" as SP
+
+User -> M : main(args)
+M -> DS : forceDarkThemeOnUIManager()
+
+alt args provided (CLI mode)
+    M -> M : loadAndRun(path, rebuild)
+else no args (GUI mode)
+    M -> M : showWelcomeScreen()
+    alt user selects Load Dataset
+        M -> M : loadAndRun(path, rebuild)
+    else user selects Demo Mode
+        M -> M : runDemoMode()
+        M -> G : new ContactGraph()
+        M -> G : addEdge(...) x N
+        M -> G : addOwner(...) x N
+        M --> M : graph
+    end
+end
+
+== loadAndRun ==
+
+M -> R : loadFromCache(cacheFile)
+alt cache exists
+    R --> M : contactGraph (from cache)
+else no cache or rebuild
+    M -> R : buildGraph(datasetRoot)
+
+    loop for each user directory
+        R -> R : listEmailFiles(sent, _sent_mail)
+        R -> R : deduplicate by SHA-256 hash
+
+        loop for each unique file
+            R -> P : parse(rawContent)
+            P -> P : extract From: and To: headers
+            P -> P : normalize addresses via EmailValidator
+            P -> EM : new EmailMessage(sender, recipients)
+            EM --> P : emailMessage
+            P --> R : emailMessage
+
+            alt emailMessage.hasValidData()
+                loop for each recipient
+                    R -> G : addEdge(sender, recipient)
+                    alt edge exists
+                        G -> G : edge.incrementWeight()
+                    else new edge
+                        G -> G : addVertex(sender) + addVertex(recipient)
+                        G -> G : adjacency.put(new Edge)
+                    end
+                end
+                R -> G : addOwner(sender)
+            end
+        end
+    end
+
+    R --> M : contactGraph
+    M -> R : saveToCache(graph, cacheFile)
+end
+
+== runAllQueries ==
+
+M -> M : print statistics to console
+M -> SP : new SearchPanel(graph)
+SP -> SP : buildFrame()
+SP -> SP : initTweaksPanel()
+
+@enduml

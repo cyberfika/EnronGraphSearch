@@ -1,0 +1,97 @@
+@startuml Diagrama_Estado
+
+skinparam stateFontSize 12
+
+title Diagrama de Estado — Enron Graph Analyzer
+
+[*] --> Inicializacao
+
+state Inicializacao {
+    [*] --> ConfigurandoLnF : main()
+    ConfigurandoLnF --> TelaBoasVindas : sem args
+    ConfigurandoLnF --> CarregandoDataset : args fornecidos
+}
+
+state TelaBoasVindas {
+    [*] --> AguardandoEscolha
+    AguardandoEscolha --> CarregandoDataset : Carregar Dataset
+    AguardandoEscolha --> ConstruindoDemo : Modo Demo
+    AguardandoEscolha --> [*] : Cancelar
+}
+
+state CarregandoDataset {
+    [*] --> VerificandoCache
+    VerificandoCache --> GrafoCarregado : cache valido
+    VerificandoCache --> ParseandoEmails : sem cache / rebuild
+    ParseandoEmails --> ConstruindoGrafo
+    ConstruindoGrafo --> SalvandoCache
+    SalvandoCache --> GrafoCarregado
+}
+
+state ConstruindoDemo {
+    [*] --> CriandoGrafoDemo
+    CriandoGrafoDemo --> GrafoCarregado
+}
+
+GrafoCarregado --> JanelaPrincipal : runAllQueries()
+
+state JanelaPrincipal {
+    [*] --> TabVisaoGeral
+
+    state TabVisaoGeral : Estatisticas + Top 20
+
+    state TabDfsBfs {
+        [*] --> AguardandoConsulta_BFS
+        AguardandoConsulta_BFS --> Executando_BFS : EXECUTAR
+        Executando_BFS --> ExibindoResultado_BFS : caminho encontrado
+        Executando_BFS --> SemResultado_BFS : sem caminho
+        ExibindoResultado_BFS --> VisualizandoGrafo_BFS : auto
+        VisualizandoGrafo_BFS --> AguardandoConsulta_BFS
+        SemResultado_BFS --> AguardandoConsulta_BFS
+    }
+
+    state TabDistancia {
+        [*] --> AguardandoConsulta_Dist
+        AguardandoConsulta_Dist --> Computando_Dist : COMPUTAR
+        Computando_Dist --> ExibindoResultado_Dist
+        ExibindoResultado_Dist --> AguardandoConsulta_Dist
+        AguardandoConsulta_Dist --> VisualizandoEgo : EGO REDE
+        VisualizandoEgo --> AguardandoConsulta_Dist
+    }
+
+    state TabCaminhoCritico {
+        [*] --> AguardandoConsulta_Crit
+        AguardandoConsulta_Crit --> Executando_Crit : CALCULAR
+        Executando_Crit --> ExibindoResultado_Crit : caminho encontrado
+        Executando_Crit --> SemResultado_Crit : sem caminho
+        ExibindoResultado_Crit --> VisualizandoGrafo_Crit : auto
+        VisualizandoGrafo_Crit --> AguardandoConsulta_Crit
+        SemResultado_Crit --> AguardandoConsulta_Crit
+    }
+
+    TabVisaoGeral --> TabDfsBfs : Tab 02
+    TabVisaoGeral --> TabDistancia : Tab 03
+    TabVisaoGeral --> TabCaminhoCritico : Tab 04
+    TabDfsBfs --> TabVisaoGeral : Tab 01
+    TabDfsBfs --> TabDistancia : Tab 03
+    TabDfsBfs --> TabCaminhoCritico : Tab 04
+    TabDistancia --> TabVisaoGeral : Tab 01
+    TabDistancia --> TabDfsBfs : Tab 02
+    TabDistancia --> TabCaminhoCritico : Tab 04
+    TabCaminhoCritico --> TabVisaoGeral : Tab 01
+    TabCaminhoCritico --> TabDfsBfs : Tab 02
+    TabCaminhoCritico --> TabDistancia : Tab 03
+}
+
+state TemaAtivo {
+    [*] --> Dark
+    Dark --> Light : usuario alterna
+    Light --> Dark : usuario alterna
+}
+
+JanelaPrincipal --> TemaAtivo : TweaksPanel
+TemaAtivo --> JanelaPrincipal : refreshTheme()
+
+JanelaPrincipal --> [*] : fechar janela
+
+@enduml

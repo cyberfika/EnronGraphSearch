@@ -1,5 +1,6 @@
 package br.edu.enron.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -15,7 +16,9 @@ import java.util.Objects;
  * {@code HashSet} collections and looked up by address without holding a direct
  * object reference.</p>
  */
-public final class Vertex {
+public final class Vertex implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /** Normalized email address that uniquely identifies this vertex. */
     private final String email;

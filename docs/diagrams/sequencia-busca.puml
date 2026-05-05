@@ -1,0 +1,64 @@
+@startuml Sequencia_Busca
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title DFS and BFS Search Sequence
+
+actor User
+participant "DfsBfsPanel" as P
+participant "DepthFirstSearch\n/ BreadthFirstSearch" as S
+participant "ContactGraph" as G
+participant "PathResult" as PR
+participant "GraphVisualizer" as V
+
+User -> P : clicks EXECUTAR
+P -> P : read fromCombo, toCombo, selectedAlgo
+
+P -> S : search(graph, originEmail, destinationEmail)
+S -> G : findVertex(originEmail)
+G --> S : Optional<Vertex> source
+S -> G : findVertex(destinationEmail)
+G --> S : Optional<Vertex> destination
+
+== DFS (stack) / BFS (queue) ==
+
+S -> S : initialise data structure / visited / predecessor
+
+loop until empty or destination found
+    S -> S : pop (DFS) or dequeue (BFS) current
+    alt current already visited
+        S -> S : skip
+    else not visited
+        S -> S : mark visited
+        alt current == destination
+            S -> S : reconstructPath(predecessor, source, destination)
+            S -> PR : new PathResult(vertexList)
+            PR --> S : pathResult
+        else
+            S -> G : getOutEdges(current)
+            G --> S : List<Edge>
+            loop for each edge
+                S -> S : if neighbour not visited:\npush/enqueue, record predecessor
+            end
+        end
+    end
+end
+
+alt destination not reached
+    S -> PR : new PathResult(emptyList)
+    PR --> S : pathResult (empty)
+end
+
+S --> P : pathResult
+
+P -> P : prepend result text to resultArea
+
+alt pathResult.exists()
+    P -> V : displayWithPath(graph, pathResult, title, algo)
+    V -> V : build subgraph (path + 1-hop neighbours)
+    V -> V : apply degree scaling + highlight path
+    V -> V : gsGraph.display()
+end
+
+@enduml

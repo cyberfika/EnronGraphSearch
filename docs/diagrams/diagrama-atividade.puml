@@ -1,0 +1,111 @@
+@startuml Diagrama_Atividade
+
+skinparam activityFontSize 12
+
+title Diagrama de Atividade — Fluxo Principal do Enron Graph Analyzer
+
+start
+
+:Iniciar aplicacao;
+
+:Configurar Look & Feel (Nimbus);
+:Aplicar tema escuro no UIManager;
+
+if (args fornecidos?) then (sim)
+    :Usar caminho do CLI;
+else (nao)
+    :Exibir tela de boas-vindas;
+
+    if (Escolha do usuario?) then (Carregar Dataset)
+        :Ler caminho do maildir;
+    else (Modo Demo)
+        :Construir grafo demo (6 vertices);
+        goto runQueries
+    end if
+end if
+
+:Tentar carregar do cache (graph.bin);
+
+if (Cache valido?) then (sim)
+    :Usar grafo do cache;
+else (nao)
+    partition "Construcao do Grafo" {
+        :Listar diretorios de usuarios;
+
+        repeat
+            :Listar emails (sent / _sent_mail);
+            :Deduplicar por SHA-256;
+
+            repeat
+                :Parsear arquivo de email;
+                :Extrair From: e To:;
+                :Normalizar enderecos;
+
+                if (Dados validos?) then (sim)
+                    repeat
+                        :addEdge(remetente, destinatario);
+                    repeat while (mais destinatarios?)
+                    :addOwner(remetente);
+                else (nao)
+                    :Descartar mensagem;
+                end if
+            repeat while (mais arquivos?)
+        repeat while (mais usuarios?)
+
+        :Imprimir relatorio;
+    }
+
+    :Salvar grafo no cache;
+end if
+
+label runQueries
+
+:Imprimir estatisticas no console;
+
+partition "Interface Grafica" {
+    :Criar SearchPanel (JFrame);
+    :Montar Topbar + Sidebar + StatusBar;
+    :Criar 4 paineis (tabs):
+      - OverviewPanel
+      - DfsBfsPanel
+      - DistancePanel
+      - CriticalPathPanel;
+    :Inicializar TweaksPanel;
+    :Exibir janela maximizada;
+}
+
+fork
+    :Usuario interage com Tab 01\n(Visao Geral);
+fork again
+    :Usuario interage com Tab 02\n(BFS / DFS);
+    :Selecionar origem, destino, algoritmo;
+    :Executar busca;
+    if (Caminho encontrado?) then (sim)
+        :Exibir resultado + visualizar grafo;
+    else (nao)
+        :Exibir mensagem vazia;
+    end if
+fork again
+    :Usuario interage com Tab 03\n(Distancia D);
+    :Selecionar no e distancia;
+    :Computar vertices a distancia D;
+    :Exibir lista de resultados;
+fork again
+    :Usuario interage com Tab 04\n(Caminho Critico);
+    :Selecionar origem e destino;
+    :Executar Dijkstra adaptado;
+    if (Caminho encontrado?) then (sim)
+        :Exibir custo inverso + dependencia;
+        :Visualizar caminho no grafo;
+    else (nao)
+        :Exibir mensagem vazia;
+    end if
+fork again
+    :Usuario alterna tema (Dark/Light);
+    :DesignSystem.setTheme();
+    :Reconstruir toda a UI;
+end fork
+
+stop
+
+@enduml

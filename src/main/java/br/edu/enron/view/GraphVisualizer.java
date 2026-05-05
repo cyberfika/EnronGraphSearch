@@ -8,243 +8,267 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.implementations.MultiGraph;
 import org.graphstream.ui.view.Viewer;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
- * Renders the {@link ContactGraph} and highlights traversal results using
- * the GraphStream library.
+ * Renders subsets of the {@link ContactGraph} using GraphStream.
  *
- * <h2>Responsibilities</h2>
- * <ul>
- *   <li>Convert the internal {@link ContactGraph} into a GraphStream
- *       {@link org.graphstream.graph.Graph} for rendering.</li>
- *   <li>Apply CSS-based styles: default node/edge appearance, highlighted path
- *       nodes and edges (for DFS, BFS, critical-path results).</li>
- *   <li>Display edge weights as labels.</li>
- * </ul>
+ * <h2>Visualisation modes</h2>
+ * <ol>
+ *   <li><b>Top-N</b> ({@link #displayTopN}) — shows the N highest-degree nodes
+ *       and edges between them. Good for an overview.</li>
+ *   <li><b>Path result</b> ({@link #displayWithPath}) — shows only the nodes
+ *       and edges of a BFS/DFS/Dijkstra result, plus immediate neighbours
+ *       for context.</li>
+ *   <li><b>Ego network</b> ({@link #displayEgoNetwork}) — shows a chosen node
+ *       and everything within K hops.</li>
+ * </ol>
  *
- * <p>This class is intentionally decoupled from all business logic.
- * It receives a fully-built {@link ContactGraph} and optional {@link PathResult}
- * objects from the services layer, and only concerns itself with rendering.</p>
- *
- * <h2>Performance note</h2>
- * <p>The full Enron graph has tens of thousands of vertices and edges; rendering
- * it all at once would be unusable. When the graph exceeds
- * {@link #MAX_NODES_FOR_FULL_RENDER} nodes, only the subgraph formed by the
- * top-100 out-degree vertices and their direct connections is displayed, with a
- * warning printed to the console.</p>
+ * <p>Node size is proportional to degree. Labels are only shown on the
+ * most important nodes to keep the display readable.</p>
  */
 public class GraphVisualizer {
 
-    /**
-     * Maximum number of nodes rendered without subgraph sampling.
-     * Graphs larger than this threshold are trimmed to keep the UI responsive.
-     */
-    private static final int MAX_NODES_FOR_FULL_RENDER = 500;
+    private static final int DEFAULT_TOP_N = 30;
+    private static final int MAX_LABELLED  = 25;
 
-    /** GraphStream stylesheet applied to all rendered graphs. */
+    // ── Dark-themed stylesheet with degree-scaled nodes ────────────────────
     private static final String STYLESHEET =
+            "graph { fill-color: #252A32; padding: 60px; }" +
             "node {" +
-            "  fill-color: #4A90D9;" +
-            "  size: 12px;" +
-            "  text-size: 10;" +
-            "  text-color: #222222;" +
+            "  fill-color: rgba(209,217,230,75);" +
+            "  size: 7px;" +
+            "  text-size: 0;" +                 // hidden by default
+            "  stroke-mode: none;" +
+            "  z-index: 1;" +
+            "}" +
+            "node.large {" +
+            "  fill-color: rgba(209,217,230,115);" +
+            "  text-size: 11;" +
+            "  text-color: #D1D9E6;" +
             "  text-style: bold;" +
             "  text-background-mode: rounded-box;" +
-            "  text-background-color: rgba(255,255,255,180);" +
-            "  text-padding: 2px;" +
-            "  stroke-mode: plain;" +
-            "  stroke-color: #1A5276;" +
-            "  stroke-width: 1px;" +
+            "  text-background-color: rgba(42,47,55,220);" +
+            "  text-padding: 3px;" +
+            "  text-offset: 0px, -8px;" +
+            "  z-index: 2;" +
             "}" +
             "node.highlighted {" +
-            "  fill-color: #E74C3C;" +
-            "  size: 18px;" +
-            "  stroke-color: #922B21;" +
+            "  fill-color: #D4AA25;" +
+            "  size: 20px;" +
+            "  text-size: 13;" +
+            "  text-color: #FFFFFF;" +
+            "  text-style: bold;" +
+            "  text-background-mode: rounded-box;" +
+            "  text-background-color: rgba(42,47,55,230);" +
+            "  text-padding: 3px;" +
+            "  text-offset: 0px, -8px;" +
+            "  stroke-color: #D4AA25;" +
+            "  stroke-mode: plain;" +
             "  stroke-width: 2px;" +
+            "  z-index: 20;" +
             "}" +
             "node.endpoint {" +
-            "  fill-color: #27AE60;" +
-            "  size: 22px;" +
-            "  stroke-color: #1E8449;" +
+            "  fill-color: #F6F7FB;" +
+            "  size: 25px;" +
+            "  text-size: 13;" +
+            "  text-color: #FFFFFF;" +
+            "  text-style: bold;" +
+            "  text-background-mode: rounded-box;" +
+            "  text-background-color: rgba(42,47,55,230);" +
+            "  text-padding: 4px;" +
+            "  text-offset: 0px, -10px;" +
+            "  stroke-color: #D4AA25;" +
+            "  stroke-mode: plain;" +
+            "  stroke-width: 3px;" +
+            "  z-index: 21;" +
+            "}" +
+            "node.ego {" +
+            "  fill-color: #D4AA25;" +
+            "  text-size: 14;" +
+            "  text-color: #FFFFFF;" +
+            "  text-style: bold;" +
+            "  text-background-mode: rounded-box;" +
+            "  text-background-color: rgba(42,47,55,230);" +
+            "  text-padding: 4px;" +
+            "  text-offset: 0px, -10px;" +
+            "  stroke-color: #D4AA25;" +
+            "  stroke-mode: plain;" +
             "  stroke-width: 2px;" +
+            "  z-index: 20;" +
             "}" +
             "edge {" +
-            "  fill-color: #AAB7B8;" +
-            "  arrow-size: 8px, 4px;" +
-            "  text-size: 9;" +
-            "  text-color: #555555;" +
+            "  fill-color: rgba(55,62,73,38);" +
+            "  size: 0.45px;" +
+            "  arrow-size: 3px, 2px;" +
+            "  text-size: 0;" +
+            "  z-index: 0;" +
             "}" +
             "edge.highlighted {" +
-            "  fill-color: #E74C3C;" +
-            "  size: 3px;" +
-            "  arrow-size: 10px, 5px;" +
+            "  fill-color: #D4AA25;" +
+            "  size: 5px;" +
+            "  arrow-size: 16px, 8px;" +
+            "  text-size: 13;" +
+            "  text-color: #D4AA25;" +
+            "  text-style: bold;" +
+            "  text-background-mode: rounded-box;" +
+            "  text-background-color: rgba(31,35,41,235);" +
+            "  text-padding: 4px;" +
+            "  text-offset: 0px, -10px;" +
+            "  z-index: 15;" +
+            "}" +
+            "edge.strong {" +
+            "  fill-color: rgba(66,73,85,55);" +
+            "  size: 0.8px;" +
+            "  arrow-size: 4px, 2px;" +
+            "  text-size: 0;" +
+            "  z-index: 0;" +
             "}";
 
+    // =====================================================================
+    // Mode 1 — Top-N overview (default for "show graph" button)
+    // =====================================================================
+
     /**
-     * Renders the given {@link ContactGraph} in a GraphStream window.
-     *
-     * <p>If the graph has more than {@link #MAX_NODES_FOR_FULL_RENDER} nodes,
-     * only a representative subgraph (top-100 out-degree vertices and their
-     * direct neighbours) is displayed.</p>
-     *
-     * @param contactGraph the graph to visualize; must not be {@code null}.
-     * @param title        window title string; must not be {@code null}.
+     * Displays the top-N nodes by degree with edges between them.
+     * Node size scales with degree. Only top nodes get labels.
      */
-    public void display(ContactGraph contactGraph, String title) {
-        if (contactGraph == null) throw new IllegalArgumentException("ContactGraph must not be null.");
+    public void display(ContactGraph graph, String title) {
+        displayTopN(graph, title, DEFAULT_TOP_N);
+    }
 
+    public void displayTopN(ContactGraph graph, String title, int n) {
         System.setProperty("org.graphstream.ui", "swing");
-        Graph gsGraph = buildGsGraph(contactGraph, title);
-        gsGraph.setAttribute("ui.stylesheet", STYLESHEET);
-        gsGraph.setAttribute("ui.quality");
-        gsGraph.setAttribute("ui.antialias");
 
-        Viewer viewer = gsGraph.display();
+        Set<Vertex> seeds = topNByTotalDegree(graph, n);
+        ContactGraph sub = buildSubgraph(graph, seeds);
+        Graph gs = toGsGraph(sub, title, graph);
+
+        applyDegreeScaling(gs, graph, seeds, MAX_LABELLED);
+
+        gs.setAttribute("ui.stylesheet", STYLESHEET);
+        gs.setAttribute("ui.quality");
+        gs.setAttribute("ui.antialias");
+
+        Viewer viewer = gs.display();
         viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
     }
 
-    /**
-     * Renders the graph and highlights a traversal result path.
-     *
-     * <p>Source and destination nodes are coloured green (CSS class
-     * {@code endpoint}). Intermediate nodes on the path are coloured red
-     * ({@code highlighted}). Edges along the path are also highlighted.</p>
-     *
-     * @param contactGraph the full contact graph; must not be {@code null}.
-     * @param pathResult   the path to highlight; must not be {@code null}.
-     * @param title        window title string.
-     * @param label        descriptive label shown in the console alongside the path.
-     */
-    public void displayWithPath(ContactGraph contactGraph,
-                                 PathResult pathResult,
-                                 String title,
-                                 String label) {
-        if (contactGraph == null) throw new IllegalArgumentException("ContactGraph must not be null.");
-        if (pathResult == null)   throw new IllegalArgumentException("PathResult must not be null.");
+    // =====================================================================
+    // Mode 2 — Path result (BFS / DFS / Dijkstra)
+    // =====================================================================
 
+    /**
+     * Displays only the path and its immediate neighbourhood.
+     * Path nodes are highlighted; endpoints are green.
+     */
+    public void displayWithPath(ContactGraph graph, PathResult path,
+                                String title, String label) {
         System.setProperty("org.graphstream.ui", "swing");
 
-        // Build subgraph: include path vertices + neighbours to provide context
-        Set<Vertex> subgraphSeeds = new HashSet<>(pathResult.getVertices());
-        for (Vertex v : pathResult.getVertices()) {
-            for (Edge e : contactGraph.getOutEdges(v)) subgraphSeeds.add(e.getDestination());
+        Set<Vertex> seeds = new LinkedHashSet<>(path.getVertices());
+        for (Vertex v : path.getVertices()) {
+            addWeightedContext(seeds, graph.getOutEdges(v), 3);
+            addWeightedContext(seeds, incomingEdges(graph, v), 3);
+            if (seeds.size() > 70) break;
         }
 
-        ContactGraph subgraph = buildSubgraph(contactGraph, subgraphSeeds);
-        Graph gsGraph = buildGsGraph(subgraph, title);
-        gsGraph.setAttribute("ui.stylesheet", STYLESHEET);
-        gsGraph.setAttribute("ui.quality");
-        gsGraph.setAttribute("ui.antialias");
+        ContactGraph sub = buildSubgraph(graph, seeds);
+        Graph gs = toGsGraph(sub, title, graph);
 
-        highlightPath(gsGraph, pathResult);
+        // Scale non-path nodes
+        Set<String> pathEmails = new HashSet<>();
+        for (Vertex v : path.getVertices()) pathEmails.add(v.getEmail());
+        applyDegreeScaling(gs, graph, seeds, 0); // no labels on context nodes
 
-        System.out.println("[" + label + "] " + pathResult);
+        // Highlight path
+        highlightPath(gs, path);
 
-        Viewer viewer = gsGraph.display();
+        gs.setAttribute("ui.stylesheet", STYLESHEET);
+        gs.setAttribute("ui.quality");
+        gs.setAttribute("ui.antialias");
+
+        System.out.println("[" + label + "] " + path);
+
+        Viewer viewer = gs.display();
         viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
+    // =====================================================================
+    // Mode 3 — Ego network (K hops from a node)
+    // =====================================================================
 
     /**
-     * Converts a {@link ContactGraph} into a GraphStream {@link Graph}.
-     * If the vertex count exceeds {@link #MAX_NODES_FOR_FULL_RENDER}, a sampled
-     * subgraph of the highest-degree nodes is used instead.
-     *
-     * @param contactGraph the source graph.
-     * @param id           the GraphStream graph identifier / window title.
-     * @return populated GraphStream graph.
+     * Displays the neighbourhood of a given node up to K hops.
+     * The center node is highlighted in gold.
      */
-    private Graph buildGsGraph(ContactGraph contactGraph, String id) {
-        ContactGraph effective = contactGraph;
+    public void displayEgoNetwork(ContactGraph graph, String centerEmail,
+                                  int hops, String title) {
+        System.setProperty("org.graphstream.ui", "swing");
 
-        if (contactGraph.vertexCount() > MAX_NODES_FOR_FULL_RENDER) {
-            System.out.println("[Visualizer] Graph has " + contactGraph.vertexCount()
-                    + " nodes — rendering top-" + MAX_NODES_FOR_FULL_RENDER + " subgraph.");
-            Set<Vertex> top = topNByOutDegree(contactGraph, MAX_NODES_FOR_FULL_RENDER);
-            effective = buildSubgraph(contactGraph, top);
+        Optional<Vertex> opt = graph.findVertex(centerEmail);
+        if (opt.isEmpty()) {
+            System.out.println("[Visualizer] Node not found: " + centerEmail);
+            return;
         }
 
-        Graph gsGraph = new MultiGraph(id);
+        Set<Vertex> seeds = bfsHops(graph, opt.get(), hops);
+        ContactGraph sub = buildSubgraph(graph, seeds);
+        Graph gs = toGsGraph(sub, title, graph);
 
-        for (Vertex v : effective.getVertices()) {
-            org.graphstream.graph.Node node = gsGraph.addNode(v.getEmail());
-            node.setAttribute("ui.label", v.getEmail());
+        applyDegreeScaling(gs, graph, seeds, MAX_LABELLED);
+
+        // Mark center
+        org.graphstream.graph.Node center = gs.getNode(centerEmail);
+        if (center != null) {
+            center.setAttribute("ui.class", "ego");
+            center.setAttribute("ui.label", shortLabel(centerEmail));
+            center.setAttribute("ui.size", 30);
         }
 
-        int edgeId = 0;
-        for (Edge e : effective.getEdges()) {
-            String eid = "e" + edgeId++;
+        gs.setAttribute("ui.stylesheet", STYLESHEET);
+        gs.setAttribute("ui.quality");
+        gs.setAttribute("ui.antialias");
+
+        Viewer viewer = gs.display();
+        viewer.setCloseFramePolicy(Viewer.CloseFramePolicy.HIDE_ONLY);
+    }
+
+    // =====================================================================
+    // Graph construction helpers
+    // =====================================================================
+
+    private Graph toGsGraph(ContactGraph sub, String id, ContactGraph fullGraph) {
+        Graph gs = new MultiGraph(id);
+
+        for (Vertex v : sub.getVertices()) {
+            gs.addNode(v.getEmail());
+        }
+
+        int eid = 0;
+        for (Edge e : sub.getEdges()) {
             try {
-                org.graphstream.graph.Edge gsEdge = gsGraph.addEdge(
-                        eid,
+                org.graphstream.graph.Edge ge = gs.addEdge(
+                        "e" + eid++,
                         e.getOrigin().getEmail(),
                         e.getDestination().getEmail(),
-                        true   // directed
-                );
-                gsEdge.setAttribute("ui.label", String.valueOf(e.getWeight()));
-            } catch (Exception ignored) {
-                // MultiDiGraph allows parallel edges; ignore any rare ID collision
-            }
+                        true);
+                ge.setAttribute("ui.label", String.valueOf(e.getWeight()));
+                // Mark strong edges
+                if (e.getWeight() >= 5) {
+                    ge.setAttribute("ui.class", "strong");
+                }
+            } catch (Exception ignored) { }
         }
-
-        return gsGraph;
+        return gs;
     }
 
-    /**
-     * Applies highlight CSS classes to nodes and edges along a {@link PathResult}.
-     *
-     * @param gsGraph    the GraphStream graph where styles will be applied.
-     * @param pathResult the path to highlight.
-     */
-    private void highlightPath(Graph gsGraph, PathResult pathResult) {
-        List<Vertex> vertices = pathResult.getVertices();
-        if (vertices.isEmpty()) return;
-
-        for (int i = 0; i < vertices.size(); i++) {
-            String email = vertices.get(i).getEmail();
-            org.graphstream.graph.Node node = gsGraph.getNode(email);
-            if (node == null) continue;
-
-            if (i == 0 || i == vertices.size() - 1) {
-                node.setAttribute("ui.class", "endpoint");
-            } else {
-                node.setAttribute("ui.class", "highlighted");
-            }
-        }
-
-        // Highlight edges along the path
-        for (int i = 0; i < vertices.size() - 1; i++) {
-            String from = vertices.get(i).getEmail();
-            String to   = vertices.get(i + 1).getEmail();
-            gsGraph.edges()
-                   .filter(e -> e.getSourceNode().getId().equals(from)
-                             && e.getTargetNode().getId().equals(to))
-                   .findFirst()
-                   .ifPresent(e -> e.setAttribute("ui.class", "highlighted"));
-        }
-    }
-
-    /**
-     * Builds a {@link ContactGraph} containing only the specified seed vertices
-     * and all edges between them.
-     *
-     * @param source  the full graph.
-     * @param seeds   the vertex subset to include.
-     * @return subgraph restricted to {@code seeds}.
-     */
     private ContactGraph buildSubgraph(ContactGraph source, Set<Vertex> seeds) {
         ContactGraph sub = new ContactGraph();
+        for (Vertex v : seeds) sub.addVertex(v.getEmail());
         for (Vertex v : seeds) {
-            sub.addVertex(v.getEmail());
             for (Edge e : source.getOutEdges(v)) {
                 if (seeds.contains(e.getDestination())) {
-                    // Replay edge additions to keep weight accurate
                     for (int w = 0; w < e.getWeight(); w++) {
                         sub.addEdge(e.getOrigin().getEmail(), e.getDestination().getEmail());
                     }
@@ -254,20 +278,155 @@ public class GraphVisualizer {
         return sub;
     }
 
+    // =====================================================================
+    // Degree scaling & labelling
+    // =====================================================================
+
     /**
-     * Returns the top-N vertices by out-degree from the given graph.
-     *
-     * @param graph the source graph.
-     * @param n     maximum number of vertices to return.
-     * @return set of selected vertices.
+     * Scales node size by degree (in the full graph) and shows labels
+     * only on the top-labelled nodes.
      */
-    private Set<Vertex> topNByOutDegree(ContactGraph graph, int n) {
-        List<Vertex> sorted = new java.util.ArrayList<>(graph.getVertices());
-        sorted.sort((a, b) -> Integer.compare(graph.outDegree(b), graph.outDegree(a)));
-        Set<Vertex> result = new HashSet<>();
+    private void applyDegreeScaling(Graph gs, ContactGraph fullGraph,
+                                    Set<Vertex> seeds, int maxLabels) {
+        // Compute degree for sorting
+        List<Map.Entry<String, Integer>> ranked = new ArrayList<>();
+        for (Vertex v : seeds) {
+            int deg = fullGraph.outDegree(v) + fullGraph.inDegree(v);
+            ranked.add(Map.entry(v.getEmail(), deg));
+        }
+        ranked.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
+
+        int maxDeg = ranked.isEmpty() ? 1 : Math.max(ranked.get(0).getValue(), 1);
+
+        // Top N get labels
+        Set<String> labelled = new HashSet<>();
+        for (int i = 0; i < Math.min(maxLabels, ranked.size()); i++) {
+            labelled.add(ranked.get(i).getKey());
+        }
+
+        for (Map.Entry<String, Integer> entry : ranked) {
+            org.graphstream.graph.Node node = gs.getNode(entry.getKey());
+            if (node == null) continue;
+
+            int deg = entry.getValue();
+            int size = maxLabels == 0
+                    ? 5 + (int) (5.0 * deg / maxDeg)
+                    : 8 + (int) (27.0 * deg / maxDeg);
+            node.setAttribute("ui.size", size);
+
+            if (labelled.contains(entry.getKey())) {
+                node.setAttribute("ui.class", "large");
+                node.setAttribute("ui.label", shortLabel(entry.getKey()));
+            }
+        }
+    }
+
+    // =====================================================================
+    // Path highlighting
+    // =====================================================================
+
+    private void highlightPath(Graph gs, PathResult path) {
+        List<Vertex> verts = path.getVertices();
+        if (verts.isEmpty()) return;
+
+        for (int i = 0; i < verts.size(); i++) {
+            String email = verts.get(i).getEmail();
+            org.graphstream.graph.Node node = gs.getNode(email);
+            if (node == null) continue;
+
+            if (i == 0 || i == verts.size() - 1) {
+                node.setAttribute("ui.class", "endpoint");
+            } else {
+                node.setAttribute("ui.class", "highlighted");
+            }
+            node.setAttribute("ui.label", shortLabel(email));
+            node.setAttribute("ui.size",
+                    (i == 0 || i == verts.size() - 1) ? 28 : 22);
+        }
+
+        // Highlight edges along path
+        for (int i = 0; i < verts.size() - 1; i++) {
+            String from = verts.get(i).getEmail();
+            String to = verts.get(i + 1).getEmail();
+            gs.edges()
+              .filter(e -> e.getSourceNode().getId().equals(from)
+                        && e.getTargetNode().getId().equals(to))
+              .findFirst()
+              .ifPresent(e -> {
+                  e.setAttribute("ui.class", "highlighted");
+                  e.setAttribute("layout.weight", 0.01);
+              });
+        }
+    }
+
+    private void addWeightedContext(Set<Vertex> seeds, List<Edge> edges, int limit) {
+        List<Edge> ranked = new ArrayList<>(edges);
+        ranked.sort(Comparator.comparingInt(Edge::getWeight).reversed());
+        for (int i = 0; i < Math.min(limit, ranked.size()); i++) {
+            Edge edge = ranked.get(i);
+            seeds.add(edge.getOrigin());
+            seeds.add(edge.getDestination());
+        }
+    }
+
+    private List<Edge> incomingEdges(ContactGraph graph, Vertex vertex) {
+        List<Edge> incoming = new ArrayList<>();
+        for (Vertex other : graph.getVertices()) {
+            for (Edge edge : graph.getOutEdges(other)) {
+                if (edge.getDestination().equals(vertex)) {
+                    incoming.add(edge);
+                }
+            }
+        }
+        return incoming;
+    }
+
+    // =====================================================================
+    // Selection helpers
+    // =====================================================================
+
+    private Set<Vertex> topNByTotalDegree(ContactGraph graph, int n) {
+        List<Vertex> sorted = new ArrayList<>(graph.getVertices());
+        sorted.sort((a, b) -> Integer.compare(
+                graph.outDegree(b) + graph.inDegree(b),
+                graph.outDegree(a) + graph.inDegree(a)));
+
+        Set<Vertex> result = new LinkedHashSet<>();
         for (int i = 0; i < Math.min(n, sorted.size()); i++) {
             result.add(sorted.get(i));
         }
         return result;
+    }
+
+    private Set<Vertex> bfsHops(ContactGraph graph, Vertex start, int maxHops) {
+        Set<Vertex> visited = new LinkedHashSet<>();
+        Queue<Vertex> queue = new LinkedList<>();
+        Map<Vertex, Integer> dist = new HashMap<>();
+
+        visited.add(start);
+        queue.add(start);
+        dist.put(start, 0);
+
+        while (!queue.isEmpty()) {
+            Vertex curr = queue.poll();
+            int d = dist.get(curr);
+            if (d >= maxHops) continue;
+
+            for (Edge e : graph.getOutEdges(curr)) {
+                Vertex nb = e.getDestination();
+                if (!visited.contains(nb)) {
+                    visited.add(nb);
+                    dist.put(nb, d + 1);
+                    queue.add(nb);
+                }
+            }
+        }
+        return visited;
+    }
+
+    /** Extracts username from email for compact labels. */
+    private static String shortLabel(String email) {
+        int at = email.indexOf('@');
+        return at > 0 ? email.substring(0, at) : email;
     }
 }

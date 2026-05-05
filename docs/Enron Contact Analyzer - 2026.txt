@@ -1,0 +1,34 @@
+Collaborative Project I Definition
+Bachelor of Computer Science
+5th Period – Problem Solving with Graphs
+
+Due date: TUESDAY, May 5, 2026. No delays in time or date will be accepted.
+
+What is required for delivery:
+* Source code in a file (submitted via the AVA activity)
+* Perform an authorship test on the computer.
+
+Teams: up to 4 people
+
+Value: Grade complement for RAs 1 and 2 (40% of each RA)
+
+Work Description
+
+The general objective of this project is to develop a contact analyzer from the benchmark email database known as the Enron Email Dataset. This database is public and available at https://www.cs.cmu.edu/~./enron/ . This project aims to show a practical application of graph theory that allows extracting useful information from the contact network generated with the emails from the database.
+
+Requirements and Features of the Analyzer
+1) (Value 2.0 Points) From the base email messages, generate a directed graph considering the sender and the recipient(s) of each message. The graph must be weighted, considering the frequency with which a sender sends a message to a recipient, and labeled, using each user's email as the label.
+2) (Value 1.0 Point) Implement methods/functions to extract the following general information:
+a. (0.25 point) Number of vertices in the graph
+b. (0.25 point) Number of edges in the graph
+c. (0.25 point) The 20 individuals with the highest out-degree and the corresponding value;
+d. (0.25 point) The 20 individuals with the highest in-degree and the corresponding value;
+3) (Value 1.5 Point) Implement a method/function that traverses the graph in DEPTH (DFS) and checks if an individual X can reach an individual Y, returning and showing the traversed path (visited nodes) in a list.
+4) (Value 1.5 Point) Implement a method/function that traverses the graph in BREADTH (BFS) and checks if an individual X can reach an individual Y, returning and showing the traversed path (visited nodes) in a list.
+5) (Value 2.0 Points) Implement a method/function that returns a list of nodes that are at a distance of D edges from a node N. Consider that a link between nodes X and Y corresponds to a distance of 1 between X and Y.
+6) (Value 2.0 Points) Considering that edge weight denotes a degree of dependency of an individual A on an individual B, implement a method/function that determines between an individual A and an individual C the critical path of information flow (highest accumulated cost) approximately, showing the individuals in the path and the accumulated dependency in the path (edge costs). In this case, adapt the Dijkstra algorithm to consider the inverse of the edge weights (weight^-1).
+
+Observations:
+* All of the above algorithms must handle the problem of cycles (avoid loops);
+* Ready-made or semi-ready programs obtained from the Internet or other colleagues will not be considered;
+* All teams involved in full or partial copies of work (both those who provided and those who received the copies) will receive a minimum grade (zero).
