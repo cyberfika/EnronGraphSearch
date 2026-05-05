@@ -4,53 +4,53 @@ import java.util.List;
 import java.util.StringJoiner;
 
 /**
- * Represents a path found by a graph traversal algorithm (DFS, BFS, or Dijkstra).
+ * Representa um caminho encontrado por um algoritmo de percurso de grafo (DFS, BFS ou Dijkstra).
  *
- * <p>This class is shared across all three use cases:</p>
+ * <p>Esta classe é compartilhada pelos três casos de uso:</p>
  * <ul>
- *   <li><strong>DFS / BFS</strong> — the {@code totalCost} field is {@code 0.0}
- *       because those algorithms only check reachability, not weighted cost.</li>
- *   <li><strong>Critical path (adapted Dijkstra)</strong> — {@code totalCost} holds
- *       the sum of inverse edge weights along the path; the caller also computes and
- *       stores the accumulated dependency (sum of original weights) separately via
+ *   <li><strong>DFS / BFS</strong> — o campo {@code totalCost} é {@code 0.0} 
+ *       porque esses algoritmos verificam apenas a alcançabilidade, não o custo ponderado.</li>
+ *   <li><strong>Caminho crítico (Dijkstra adaptado)</strong> — {@code totalCost} contém 
+ *       a soma dos pesos inversos das arestas ao longo do caminho; o chamador também calcula 
+ *       e armazena a dependência acumulada (soma dos pesos originais) separadamente via 
  *       {@link #getAccumulatedDependency()}.</li>
  * </ul>
  *
- * <p>The vertex list is always returned as an unmodifiable copy to prevent external
- * code from mutating a result after it has been produced.</p>
+ * <p>A lista de vértices é sempre retornada como uma cópia imutável para evitar que 
+ * código externo altere um resultado após ele ter sido produzido.</p>
  */
 public final class PathResult {
 
-    /** Ordered sequence of vertices from source to target. Empty when no path exists. */
+    /** Sequência ordenada de vértices da origem ao destino. Vazia quando não existe caminho. */
     private final List<Vertex> vertices;
 
     /**
-     * Sum of edge costs along the path. For DFS/BFS this is {@code 0.0}.
-     * For the critical path it is the sum of {@code 1.0 / weight} values.
+     * Soma dos custos das arestas ao longo do caminho. Para DFS/BFS, isso é {@code 0.0}.
+     * Para o caminho crítico, é a soma dos valores {@code 1.0 / peso}.
      */
     private final double totalCost;
 
     /**
-     * Sum of original edge weights along the path.
-     * Only meaningful for the critical-path result; {@code 0.0} for DFS/BFS.
+     * Soma dos pesos originais das arestas ao longo do caminho.
+     * Relevante apenas para o resultado do caminho crítico; {@code 0.0} para DFS/BFS.
      */
     private final double accumulatedDependency;
 
     /**
-     * Constructs a {@code PathResult} for DFS or BFS (no cost semantics).
+     * Constrói um {@code PathResult} para DFS ou BFS (sem semântica de custo).
      *
-     * @param vertices ordered list of vertices on the path; must not be {@code null}.
+     * @param vertices lista ordenada de vértices no caminho; não deve ser {@code null}.
      */
     public PathResult(List<Vertex> vertices) {
         this(vertices, 0.0, 0.0);
     }
 
     /**
-     * Constructs a {@code PathResult} for the critical-path algorithm.
+     * Constrói um {@code PathResult} para o algoritmo de caminho crítico.
      *
-     * @param vertices              ordered vertex list; must not be {@code null}.
-     * @param totalCost             sum of inverse-weight costs along the path.
-     * @param accumulatedDependency sum of original weights along the path.
+     * @param vertices              lista de vértices ordenada; não deve ser {@code null}.
+     * @param totalCost             soma dos custos de peso inverso ao longo do caminho.
+     * @param accumulatedDependency soma dos pesos originais ao longo do caminho.
      */
     public PathResult(List<Vertex> vertices, double totalCost, double accumulatedDependency) {
         if (vertices == null) {
@@ -62,48 +62,48 @@ public final class PathResult {
     }
 
     /**
-     * Returns the ordered list of vertices forming the path.
+     * Retorna a lista ordenada de vértices que formam o caminho.
      *
-     * @return unmodifiable vertex list; empty if no path was found.
+     * @return lista de vértices imutável; vazia se nenhum caminho foi encontrado.
      */
     public List<Vertex> getVertices() {
         return vertices;
     }
 
     /**
-     * Returns the total inverse-weight cost of the path, meaningful only for
-     * the adapted Dijkstra result.
+     * Retorna o custo total de peso inverso do caminho, significativo apenas para 
+     * o resultado do Dijkstra adaptado.
      *
-     * @return total cost; {@code 0.0} for DFS/BFS results.
+     * @return custo total; {@code 0.0} para resultados DFS/BFS.
      */
     public double getTotalCost() {
         return totalCost;
     }
 
     /**
-     * Returns the accumulated dependency, defined as the sum of the original edge
-     * weights along the critical path. Only meaningful for the Dijkstra result.
+     * Retorna a dependência acumulada, definida como a soma dos pesos originais das arestas 
+     * ao longo do caminho crítico. Relevante apenas para o resultado do Dijkstra.
      *
-     * @return sum of original weights; {@code 0.0} for DFS/BFS results.
+     * @return soma dos pesos originais; {@code 0.0} para resultados DFS/BFS.
      */
     public double getAccumulatedDependency() {
         return accumulatedDependency;
     }
 
     /**
-     * Returns {@code true} if a path was actually found (vertex list is non-empty).
+     * Retorna {@code true} se um caminho foi realmente encontrado (a lista de vértices não está vazia).
      *
-     * @return {@code false} when no path exists between the queried vertices.
+     * @return {@code false} quando não existe caminho entre os vértices consultados.
      */
     public boolean exists() {
         return !vertices.isEmpty();
     }
 
     /**
-     * Returns a human-readable representation of the path as a chain of email
-     * addresses separated by {@code ->}.
+     * Retorna uma representação legível do caminho como uma cadeia de endereços 
+     * de e-mail separados por {@code ->}.
      *
-     * @return formatted path string, or {@code "(no path)"} if empty.
+     * @return string do caminho formatada, ou {@code "(no path)"} se estiver vazia.
      */
     @Override
     public String toString() {

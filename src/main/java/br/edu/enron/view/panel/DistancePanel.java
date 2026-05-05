@@ -16,7 +16,7 @@ import java.util.List;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Tab 03 — Distância D: BFS-level query.
+ * Aba 03 — Distância D: consulta por nível BFS.
  */
 public final class DistancePanel extends JPanel {
 

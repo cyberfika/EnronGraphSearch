@@ -1,29 +1,29 @@
 package br.edu.enron.model;
 
 /**
- * Immutable record of a degree query result for a single vertex.
+ * Registro imutável do resultado de uma consulta de grau para um único vértice.
  *
- * <p>Used by {@code ContactAnalyzer} to return the top-20 lists for in-degree
- * and out-degree. Immutability guarantees that result objects passed around or
- * stored in collections remain consistent.</p>
+ * <p>Usado pelo {@code ContactAnalyzer} para retornar as listas dos top-20 para grau 
+ * de entrada e grau de saída. A imutabilidade garante que os objetos de resultado 
+ * passados ou armazenados em coleções permaneçam consistentes.</p>
  */
 public final class DegreeResult implements Comparable<DegreeResult> {
 
-    /** Normalized email address of the vertex. */
+    /** Endereço de e-mail normalizado do vértice. */
     private final String email;
 
     /**
-     * Degree value — number of distinct in-neighbours or out-neighbours,
-     * depending on the query that produced this result.
+     * Valor do grau — número de vizinhos de entrada ou vizinhos de saída distintos, 
+     * dependendo da consulta que produziu este resultado.
      */
     private final int degree;
 
     /**
-     * Constructs a {@code DegreeResult}.
+     * Constrói um {@code DegreeResult}.
      *
-     * @param email  the vertex email; must not be {@code null} or blank.
-     * @param degree the degree value; must be non-negative.
-     * @throws IllegalArgumentException if {@code email} is invalid or {@code degree} is negative.
+     * @param email  o e-mail do vértice; não deve ser {@code null} ou vazio.
+     * @param degree o valor do grau; deve ser não negativo.
+     * @throws IllegalArgumentException se o {@code email} for inválido ou o {@code degree} for negativo.
      */
     public DegreeResult(String email, int degree) {
         if (email == null || email.isBlank()) {
@@ -37,41 +37,41 @@ public final class DegreeResult implements Comparable<DegreeResult> {
     }
 
     /**
-     * Returns the vertex email address.
+     * Retorna o endereço de e-mail do vértice.
      *
-     * @return the email string.
+     * @return a string do e-mail.
      */
     public String getEmail() {
         return email;
     }
 
     /**
-     * Returns the degree of the vertex for the queried direction.
+     * Retorna o grau do vértice para a direção consultada.
      *
-     * @return non-negative degree value.
+     * @return valor do grau não negativo.
      */
     public int getDegree() {
         return degree;
     }
 
     /**
-     * Natural ordering: descending by degree, then ascending by email for tie-breaking.
-     * This ordering is used directly when sorting the top-20 lists.
+     * Ordenação natural: decrescente pelo grau e, em seguida, crescente pelo e-mail para desempate. 
+     * Esta ordenação é usada diretamente ao classificar as listas dos top-20.
      *
-     * @param other the result to compare against.
-     * @return negative if this should appear before {@code other}.
+     * @param other o resultado a ser comparado.
+     * @return negativo se este deve aparecer antes de {@code other}.
      */
     @Override
     public int compareTo(DegreeResult other) {
-        int cmp = Integer.compare(other.degree, this.degree); // descending degree
+        int cmp = Integer.compare(other.degree, this.degree); // grau decrescente
         if (cmp != 0) return cmp;
-        return this.email.compareTo(other.email);             // ascending email
+        return this.email.compareTo(other.email);             // e-mail crescente
     }
 
     /**
-     * Returns a formatted line suitable for console display.
+     * Retorna uma linha formatada adequada para exibição no console.
      *
-     * @return string in the form {@code email (degree=N)}.
+     * @return string no formato {@code email (degree=N)}.
      */
     @Override
     public String toString() {

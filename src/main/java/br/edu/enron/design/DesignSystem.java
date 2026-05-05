@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Design tokens translated from design_template/styles.css.
+ * Tokens de design traduzidos de design_template/styles.css.
  */
 public class DesignSystem {
 

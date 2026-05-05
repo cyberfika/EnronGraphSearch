@@ -13,11 +13,11 @@ import java.awt.event.MouseEvent;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Horizontal query strip matching the design_template .query grid.
+ * Faixa de consulta horizontal correspondente à grade .query do design_template.
  *
- * <p>Each cell has a small uppercase label on top and a control below.
- * Cells are separated by hairline borders. The last cell may be a
- * primary (accent-coloured) action button.</p>
+ * <p>Cada célula tem um rótulo pequeno em maiúsculas no topo e um controle abaixo.
+ * As células são separadas por bordas finas. A última célula pode ser um
+ * botão de ação primário (com cor de destaque).</p>
  */
 public final class QueryRow extends JPanel {
 
@@ -27,9 +27,9 @@ public final class QueryRow extends JPanel {
         setBorder(BorderFactory.createLineBorder(DesignSystem.rule(), 1));
     }
 
-    // ── Cell builders ───────────────────────────────────────────────────────
+    // ── Construtores de células ─────────────────────────────────────────────
 
-    /** Add a labelled combo cell. */
+    /** Adiciona uma célula de caixa de combinação com rótulo. */
     public void addComboCell(String label, String accent, JComboBox<String> combo, double weight) {
         JPanel cell = makeCell(label, accent);
         combo.setPreferredSize(new Dimension(10, 28));
@@ -37,14 +37,14 @@ public final class QueryRow extends JPanel {
         addCell(cell, weight);
     }
 
-    /** Add a labelled spinner cell. */
+    /** Adiciona uma célula de seletor numérico (spinner) com rótulo. */
     public void addSpinnerCell(String label, String accent, JSpinner spinner, double weight) {
         JPanel cell = makeCell(label, accent);
         cell.add(spinner, BorderLayout.CENTER);
         addCell(cell, weight);
     }
 
-    /** Add a BFS/DFS toggle cell. */
+    /** Adiciona uma célula de alternância de algoritmo (Ex: BFS/DFS). */
     public void addAlgoToggle(String label, String[] options, int defaultIdx,
                               java.util.function.Consumer<String> onSelect) {
         JPanel cell = makeCell(label, null);
@@ -76,7 +76,7 @@ public final class QueryRow extends JPanel {
             });
             toggle.add(b);
         }
-        // Set initial state
+        // Definir estado inicial
         for (int j = 0; j < btns.length; j++) {
             btns[j].setBackground(j == defaultIdx ? DesignSystem.ink() : new Color(0, 0, 0, 0));
             btns[j].setForeground(j == defaultIdx ? DesignSystem.bg() : DesignSystem.muted());
@@ -88,7 +88,7 @@ public final class QueryRow extends JPanel {
         addCell(cell, 0);
     }
 
-    /** Add a static info cell (e.g. "min Σ 1/peso"). */
+    /** Adiciona uma célula de informação estática (ex: "min Σ 1/peso"). */
     public void addInfoCell(String label, String info) {
         JPanel cell = makeCell(label, null);
         JLabel infoLbl = lbl(info, MONO_MD, DesignSystem.ink());
@@ -96,7 +96,7 @@ public final class QueryRow extends JPanel {
         addCell(cell, 0);
     }
 
-    /** Add the primary action button (accent background, spans full height). */
+    /** Adiciona o botão de ação principal (fundo de destaque, ocupa toda a altura). */
     public void addActionButton(String label, ActionListener handler) {
         JButton btn = new JButton(label + "  →") {
             @Override protected void paintComponent(Graphics g) {
@@ -132,7 +132,7 @@ public final class QueryRow extends JPanel {
         add(btn, gc);
     }
 
-    // ── Internal helpers ────────────────────────────────────────────────────
+    // ── Auxiliares internos ──────────────────────────────────────────────────
 
     private JPanel makeCell(String label, String accent) {
         JPanel cell = new JPanel(new BorderLayout(0, 4));
@@ -157,7 +157,7 @@ public final class QueryRow extends JPanel {
         gc.weightx = weightx;
         gc.weighty = 1;
 
-        // Add left border except for first cell
+        // Adicionar borda esquerda exceto para a primeira célula
         if (gc.gridx > 0) {
             cell.setBorder(BorderFactory.createCompoundBorder(
                     new MatteBorder(0, 1, 0, 0, DesignSystem.rule()),

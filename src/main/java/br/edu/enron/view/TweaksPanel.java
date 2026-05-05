@@ -9,15 +9,15 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 /**
- * Floating tweaks panel (Dark/Light mode toggle).
- * Mirrors the tweaks-panel.jsx from the design_template.
+ * Painel flutuante de ajustes (alternância entre modo Escuro/Claro).
+ * Espelha o tweaks-panel.jsx do design_template.
  */
 public class TweaksPanel extends JDialog {
 
     private Runnable themeChangeListener;
 
     public TweaksPanel(Frame owner) {
-        super(owner, "Tweaks", false);
+        super(owner, "Ajustes", false);
         setUndecorated(false);
         setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
         setResizable(false);
@@ -27,15 +27,15 @@ public class TweaksPanel extends JDialog {
         content.setBackground(DesignSystem.LIGHT_BG);
         content.setBorder(new EmptyBorder(14, 14, 14, 14));
 
-        // Title
-        JLabel titleLbl = new JLabel("Tweaks");
+        // Título
+        JLabel titleLbl = new JLabel("Ajustes");
         titleLbl.setFont(FontManager.getSansSerifBoldFont(12));
         titleLbl.setForeground(DesignSystem.LIGHT_INK);
         titleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(titleLbl);
         content.add(Box.createVerticalStrut(10));
 
-        // Theme section
+        // Seção de tema
         JLabel themeSection = new JLabel("TEMA");
         themeSection.setFont(FontManager.getMonospacedFont(10));
         themeSection.setForeground(DesignSystem.LIGHT_MUTED);
@@ -43,7 +43,7 @@ public class TweaksPanel extends JDialog {
         content.add(themeSection);
         content.add(Box.createVerticalStrut(8));
 
-        // Dark/Light radio buttons
+        // Botões de rádio Escuro/Claro
         JPanel themeButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         themeButtons.setBackground(DesignSystem.LIGHT_BG);
         themeButtons.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -78,7 +78,7 @@ public class TweaksPanel extends JDialog {
         setContentPane(content);
         setSize(280, 180);
 
-        // Position at bottom-right of owner frame (matching web design)
+        // Posicionar no canto inferior direito do frame proprietário (combinando com o design web)
         if (owner != null) {
             int x = owner.getX() + owner.getWidth() - 280 - 16;
             int y = owner.getY() + owner.getHeight() - 180 - 16;
@@ -89,15 +89,15 @@ public class TweaksPanel extends JDialog {
     }
 
     /**
-     * Sets a listener to be notified when the theme changes.
-     * @param listener callback to invoke when theme is updated
+     * Define um ouvinte para ser notificado quando o tema mudar.
+     * @param listener retorno de chamada (callback) a ser invocado quando o tema for atualizado
      */
     public void setThemeChangeListener(Runnable listener) {
         this.themeChangeListener = listener;
     }
 
     private void updateTheme() {
-        System.out.println("[Tweaks] Theme changed to: " + DesignSystem.getTheme());
+        System.out.println("[Tweaks] Tema alterado para: " + DesignSystem.getTheme());
         DesignSystem.applyToUIManager();
         Window owner = getOwner();
         if (owner != null) {
@@ -107,7 +107,7 @@ public class TweaksPanel extends JDialog {
             owner.repaint();
         }
         SwingUtilities.updateComponentTreeUI(this);
-        // Notify listener if set
+        // Notificar o ouvinte, se definido
         if (themeChangeListener != null) {
             themeChangeListener.run();
         }

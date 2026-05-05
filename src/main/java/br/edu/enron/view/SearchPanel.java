@@ -21,10 +21,10 @@ import java.awt.event.MouseEvent;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Main application window — thin shell that composes panel and component classes.
+ * Janela principal da aplicação — uma estrutura leve que compõe as classes de painel e componentes.
  *
- * <p>Layout: full-screen shell with a fixed topbar (44 px), a 264 px sidebar,
- * a card-switched main area (four tabs), and a 24 px status bar.</p>
+ * <p>Layout: estrutura em tela cheia com uma barra superior fixa (44 px), uma barra lateral de 264 px,
+ * uma área de cards principal (quatro abas) e uma barra de status de 24 px.</p>
  */
 public class SearchPanel extends JFrame {
 
@@ -57,7 +57,7 @@ public class SearchPanel extends JFrame {
         setVisible(true);
     }
 
-    // ── Frame skeleton ─────────────────────────────────────────────────────
+    // ── Esqueleto da janela (Frame skeleton) ───────────────────────────────
 
     private void buildFrame() {
         JPanel root = new JPanel(new BorderLayout());
@@ -72,7 +72,7 @@ public class SearchPanel extends JFrame {
         setContentPane(root);
     }
 
-    // ── Topbar ─────────────────────────────────────────────────────────────
+    // ── Barra Superior (Topbar) ───────────────────────────────────────────
 
     private JPanel buildTopbar() {
         JPanel bar = new JPanel(new BorderLayout());
@@ -80,13 +80,13 @@ public class SearchPanel extends JFrame {
         bar.setPreferredSize(new Dimension(0, 44));
         bar.setBorder(new MatteBorder(0, 0, 1, 0, DesignSystem.rule()));
 
-        // Brand
+        // Marca (Brand)
         JPanel brand = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
         brand.setOpaque(false);
         brand.add(lbl("\u2B21", new Font(Font.SANS_SERIF, Font.BOLD, 16), DesignSystem.accent()));
         brand.add(lbl("GRAPH\u00B7SEARCH", MONO_MD, DesignSystem.ink()));
 
-        // Tabs
+        // Abas (Tabs)
         JPanel tabs = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         tabs.setOpaque(false);
 
@@ -102,7 +102,7 @@ public class SearchPanel extends JFrame {
             if ("overview".equals(def[0])) { activeTabBtn = btn; activateTab(btn); }
         }
 
-        // Right side — tweaks button + label
+        // Lado direito — botão de ajustes + rótulo
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
         right.add(buildTweaksButton());
@@ -192,7 +192,7 @@ public class SearchPanel extends JFrame {
         btn.setBorderPainted(false);
     }
 
-    // ── Main card area ─────────────────────────────────────────────────────
+    // ── Área principal de cards (Main card area) ───────────────────────────
 
     private JPanel buildMainArea() {
         ContactAnalyzer analyzer = new ContactAnalyzer(graph);
@@ -207,7 +207,7 @@ public class SearchPanel extends JFrame {
         return mainCards;
     }
 
-    // ── Tweaks / theme ─────────────────────────────────────────────────────
+    // ── Ajustes / tema (Tweaks / theme) ────────────────────────────────────
 
     private void initTweaksPanel() {
         tweaksPanel = new TweaksPanel(this);
@@ -223,7 +223,7 @@ public class SearchPanel extends JFrame {
         });
     }
 
-    // ── Utility ────────────────────────────────────────────────────────────
+    // ── Utilitários (Utility) ───────────────────────────────────────────────
 
     private int computeTotalMessages() {
         int total = 0;

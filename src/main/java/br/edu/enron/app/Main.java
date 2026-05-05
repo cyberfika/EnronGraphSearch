@@ -20,22 +20,22 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Application entry point for the Enron Graph Analyzer.
+ * Ponto de entrada da aplicação para o Enron Graph Analyzer.
  *
- * <p>Always opens a graphical welcome screen — no command-line arguments required.
- * If {@code data/maildir} is found next to the working directory it is
- * pre-selected automatically.</p>
+ * <p>Sempre abre uma tela gráfica de boas-vindas — nenhum argumento de linha de comando é necessário.
+ * Se {@code data/maildir} for encontrado ao lado do diretório de trabalho, ele será
+ * pré-selecionado automaticamente.</p>
  *
- * <h2>Optional CLI usage</h2>
+ * <h2>Uso opcional via CLI</h2>
  * <pre>
- *   mvn exec:java -Dexec.args="data/maildir"            # skip welcome screen
- *   mvn exec:java -Dexec.args="data/maildir --rebuild"  # force cache rebuild
+ *   mvn exec:java -Dexec.args="data/maildir"            # pular tela de boas-vindas
+ *   mvn exec:java -Dexec.args="data/maildir --rebuild"  # forçar reconstrução do cache
  * </pre>
  */
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        // Use Nimbus L&F for consistent cross-platform color control
+        // Usar Nimbus L&F para controle de cores consistente entre plataformas
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (Exception e) {
@@ -44,11 +44,11 @@ public class Main {
         DesignSystem.applyToUIManager();
 
         if (args.length > 0) {
-            // CLI path provided — skip welcome screen
+            // Caminho CLI fornecido — pular tela de boas-vindas
             boolean rebuild = List.of(args).contains("--rebuild");
             loadAndRun(Paths.get(args[0]), rebuild);
         } else {
-            // Always show the visual welcome screen
+            // Sempre mostrar a tela visual de boas-vindas
             AtomicReference<StartupChoice> choice = new AtomicReference<>();
             SwingUtilities.invokeAndWait(() -> choice.set(showWelcomeScreen()));
 
@@ -64,14 +64,14 @@ public class Main {
     }
 
     // =========================================================================
-    // Welcome screen
+    // Tela de boas-vindas
     // =========================================================================
 
     /**
-     * Builds and shows the full-window welcome screen.
-     * Blocks until the user makes a choice.
+     * Constrói e exibe a tela de boas-vindas em janela inteira.
+     * Bloqueia até que o usuário faça uma escolha.
      *
-     * @return the user's startup choice.
+     * @return a escolha de inicialização do usuário.
      */
     private static StartupChoice showWelcomeScreen() {
         AtomicReference<StartupChoice> result =
@@ -81,11 +81,11 @@ public class Main {
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dlg.setResizable(false);
 
-        // ── root panel ───────────────────────────────────────────────────────
+        // ── painel raiz ──────────────────────────────────────────────────────
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(DesignSystem.DARK_BG);
 
-        // ── header banner ────────────────────────────────────────────────────
+        // ── banner de cabeçalho ──────────────────────────────────────────────
         JPanel banner = new JPanel(new BorderLayout());
         banner.setBackground(DesignSystem.DARK_SURFACE);
         banner.setBorder(new EmptyBorder(28, 32, 24, 32));
@@ -95,7 +95,7 @@ public class Main {
         title.setForeground(DesignSystem.DARK_INK);
 
         JLabel subtitle = new JLabel(
-                "Directed contact-graph analysis over the Enron Email Dataset");
+                "Análise de grafo de contatos direcionado sobre o Enron Email Dataset");
         subtitle.setFont(FontManager.getSansSerifFont(14));
         subtitle.setForeground(DesignSystem.DARK_INK_2);
 
@@ -103,14 +103,14 @@ public class Main {
         banner.add(subtitle, BorderLayout.SOUTH);
         root.add(banner, BorderLayout.NORTH);
 
-        // ── centre: path selector + action cards ─────────────────────────────
+        // ── centro: seletor de caminho + cards de ação ───────────────────────
         JPanel centre = new JPanel();
         centre.setLayout(new BoxLayout(centre, BoxLayout.Y_AXIS));
         centre.setBackground(DesignSystem.DARK_BG);
         centre.setBorder(new EmptyBorder(24, 32, 16, 32));
 
-        // Path row
-        JLabel pathLbl = new JLabel("Dataset folder (maildir):");
+        // Linha do caminho
+        JLabel pathLbl = new JLabel("Pasta do dataset (maildir):");
         pathLbl.setFont(FontManager.getSansSerifBoldFont(13));
         pathLbl.setForeground(DesignSystem.DARK_INK);
         pathLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -126,21 +126,21 @@ public class Main {
         pathField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         pathField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Auto-detect maildir
+        // Detecção automática do maildir
         File autoMaildir = new File(System.getProperty("user.dir"), "data/maildir");
         if (autoMaildir.isDirectory()) {
             pathField.setText(autoMaildir.getAbsolutePath());
             pathField.setForeground(DesignSystem.DARK_ACCENT);
         }
 
-        JButton browseBtn = new JButton("  Browse…  ");
+        JButton browseBtn = new JButton("  Procurar…  ");
         browseBtn.setFont(FontManager.getSansSerifFont(12));
         browseBtn.setBackground(DesignSystem.DARK_SURFACE_2);
         browseBtn.setForeground(DesignSystem.DARK_INK);
         browseBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         browseBtn.addActionListener(e -> {
             JFileChooser fc = new JFileChooser();
-            fc.setDialogTitle("Select the maildir folder");
+            fc.setDialogTitle("Selecione a pasta maildir");
             fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fc.setAcceptAllFileFilterUsed(false);
             String current = pathField.getText().trim();
@@ -160,7 +160,7 @@ public class Main {
         pathRow.add(pathField, BorderLayout.CENTER);
         pathRow.add(browseBtn, BorderLayout.EAST);
 
-        JCheckBox rebuildCheck = new JCheckBox("Force cache rebuild (re-parse all files)");
+        JCheckBox rebuildCheck = new JCheckBox("Forçar reconstrução do cache (reanalisar arquivos)");
         rebuildCheck.setFont(FontManager.getSansSerifFont(12));
         rebuildCheck.setBackground(DesignSystem.DARK_BG);
         rebuildCheck.setForeground(DesignSystem.DARK_INK_2);
@@ -173,32 +173,32 @@ public class Main {
         centre.add(rebuildCheck);
         centre.add(Box.createVerticalStrut(20));
 
-        // ── action cards ─────────────────────────────────────────────────────
+        // ── cards de ação ────────────────────────────────────────────────────
         JPanel cards = new JPanel(new GridLayout(1, 2, 16, 0));
         cards.setBackground(DesignSystem.DARK_BG);
         cards.setAlignmentX(Component.LEFT_ALIGNMENT);
         cards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
-        // Card 1 — Load dataset
+        // Card 1 — Carregar dataset
         JPanel loadCard = actionCard(
-                "Load Enron Dataset",
-                "Reads 150 user mailboxes,\nbuilds the full contact graph.",
+                "Carregar Dataset Enron",
+                "Lê 150 caixas de correio,\nconstrói o grafo de contatos.",
                 DesignSystem.DARK_ACCENT, () -> {
                     String path = pathField.getText().trim();
                     if (path.isEmpty()) {
                         JOptionPane.showMessageDialog(dlg,
-                                "Please select or browse to the maildir folder.",
-                                "No folder selected", JOptionPane.WARNING_MESSAGE);
+                                "Por favor, selecione ou procure a pasta maildir.",
+                                "Pasta não selecionada", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
                     result.set(new StartupChoice(false, false, path, rebuildCheck.isSelected()));
                     dlg.dispose();
                 });
 
-        // Card 2 — Demo mode
+        // Card 2 — Modo demonstração
         JPanel demoCard = actionCard(
-                "Demo Mode",
-                "Uses a small built-in graph\n(no dataset files required).",
+                "Modo Demonstração",
+                "Usa um grafo pequeno embutido\n(não requer arquivos do dataset).",
                 DesignSystem.DARK_SURFACE_2, () -> {
                     result.set(new StartupChoice(false, true, null, false));
                     dlg.dispose();
@@ -210,12 +210,12 @@ public class Main {
 
         root.add(centre, BorderLayout.CENTER);
 
-        // ── footer ───────────────────────────────────────────────────────────
+        // ── rodapé ───────────────────────────────────────────────────────────
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.LEFT));
         footer.setBackground(DesignSystem.DARK_SURFACE);
         footer.setBorder(new EmptyBorder(4, 28, 4, 28));
         JLabel footerLbl = new JLabel(
-                "Java 17  ·  GraphStream 2.0  ·  Enron Email Dataset  ·  Graph Theory Project");
+                "Java 17  ·  GraphStream 2.0  ·  Enron Email Dataset  ·  Projeto de Teoria dos Grafos");
         footerLbl.setFont(FontManager.getSansSerifFont(11));
         footerLbl.setForeground(DesignSystem.DARK_MUTED);
         footer.add(footerLbl);
@@ -231,13 +231,13 @@ public class Main {
     }
 
     /**
-     * Builds a clickable action card with a title, description and colour.
+     * Constrói um card de ação clicável com título, descrição e cor.
      *
-     * @param title   card heading.
-     * @param desc    two-line description (use {@code \n} as separator).
-     * @param color   card background colour.
-     * @param action  action to run when the card is clicked.
-     * @return the configured panel.
+     * @param title   título do card.
+     * @param desc    descrição em duas linhas (use {@code \n} como separador).
+     * @param color   cor de fundo do card.
+     * @param action  ação a ser executada quando o card for clicado.
+     * @return o painel configurado.
      */
     private static JPanel actionCard(String title, String desc, Color color, Runnable action) {
         JPanel card = new JPanel(new BorderLayout(0, 6));
@@ -262,7 +262,7 @@ public class Main {
         card.add(titleLbl,  BorderLayout.NORTH);
         card.add(descPanel, BorderLayout.CENTER);
 
-        // Click and hover effects
+        // Efeitos de clique e hover
         card.addMouseListener(new MouseAdapter() {
             private final Color normal  = color;
             private final Color hover   = color.brighter();
@@ -274,18 +274,18 @@ public class Main {
         return card;
     }
 
-    /** Carries the user's choice out of the welcome screen. */
+    /** Carrega a escolha do usuário feita na tela de boas-vindas. */
     private record StartupChoice(boolean cancelled, boolean useDemo, String path, boolean rebuild) {}
 
     // =========================================================================
-    // Dataset mode
+    // Modo Dataset
     // =========================================================================
 
     /**
-     * Loads or builds the contact graph from the dataset directory, then runs all queries.
+     * Carrega ou constrói o grafo de contatos a partir do diretório do dataset e, em seguida, executa todas as consultas.
      *
-     * @param datasetRoot path to the {@code maildir} folder.
-     * @param rebuild     if {@code true}, ignores existing cache and re-parses everything.
+     * @param datasetRoot caminho para a pasta {@code maildir}.
+     * @param rebuild     se {@code true}, ignora o cache existente e analisa tudo novamente.
      */
     private static void loadAndRun(Path datasetRoot, boolean rebuild) {
         EnronDatasetReader reader    = new EnronDatasetReader();
@@ -295,34 +295,34 @@ public class Main {
         if (!rebuild) graph = reader.loadFromCache(cacheFile);
 
         if (graph == null) {
-            System.out.println("Building graph from dataset: " + datasetRoot);
+            System.out.println("Construindo grafo a partir do dataset: " + datasetRoot);
             graph = reader.buildGraph(datasetRoot);
             reader.saveToCache(graph, cacheFile);
         } else {
-            System.out.println("Graph loaded from cache: " + cacheFile);
+            System.out.println("Grafo carregado do cache: " + cacheFile);
         }
 
         runAllQueries(graph);
     }
 
     // =========================================================================
-    // Demo mode
+    // Modo Demonstração
     // =========================================================================
 
     /**
-     * Builds a small hand-crafted graph for demonstration.
+     * Constrói um pequeno grafo manual para demonstração.
      *
      * <pre>
-     *   alice  →  bob    weight 2
-     *   alice  →  carol  weight 1
-     *   bob    →  dave   weight 1
-     *   carol  →  dave   weight 1
-     *   dave   →  eve    weight 3
-     *   bob    →  eve    weight 1
+     *   alice  →  bob    peso 2
+     *   alice  →  carol  peso 1
+     *   bob    →  dave   peso 1
+     *   carol  →  dave   peso 1
+     *   dave   →  eve    peso 3
+     *   bob    →  eve    peso 1
      * </pre>
      */
     private static void runDemoMode() {
-        System.out.println("=== DEMO MODE ===\n");
+        System.out.println("=== MODO DEMONSTRAÇÃO ===\n");
 
         ContactGraph graph = new ContactGraph();
         graph.addEdge("alice@company.com", "bob@company.com");
@@ -335,7 +335,7 @@ public class Main {
         graph.addEdge("dave@company.com",  "eve@company.com");
         graph.addEdge("bob@company.com",   "eve@company.com");
 
-        // Register the demo senders as owners so they appear in the From combo
+        // Registrar os remetentes da demo como proprietários para que apareçam no combo De
         graph.addOwner("alice@company.com");
         graph.addOwner("bob@company.com");
         graph.addOwner("carol@company.com");
@@ -345,29 +345,29 @@ public class Main {
     }
 
     // =========================================================================
-    // Shared
+    // Compartilhado
     // =========================================================================
 
     /**
-     * Prints statistics to the console and opens the interactive search panel.
+     * Imprime estatísticas no console e abre o painel de busca interativo.
      *
-     * @param graph the fully built contact graph.
+     * @param graph o grafo de contatos totalmente construído.
      */
     private static void runAllQueries(ContactGraph graph) {
         ContactAnalyzer analyzer = new ContactAnalyzer(graph);
 
-        separator("1. GRAPH STATISTICS");
-        System.out.println("  Vertices : " + analyzer.getVertexCount());
-        System.out.println("  Edges    : " + analyzer.getEdgeCount());
+        separator("1. ESTATÍSTICAS DO GRAFO");
+        System.out.println("  Vértices : " + analyzer.getVertexCount());
+        System.out.println("  Arestas  : " + analyzer.getEdgeCount());
 
-        separator("2. TOP 20 OUT-DEGREE (most active senders)");
+        separator("2. TOP 20 GRAU DE SAÍDA (remetentes mais ativos)");
         printDegreeList(analyzer.getTop20OutDegree());
 
-        separator("3. TOP 20 IN-DEGREE (most contacted recipients)");
+        separator("3. TOP 20 GRAU DE ENTRADA (destinatários mais procurados)");
         printDegreeList(analyzer.getTop20InDegree());
 
-        separator("4-7. INTERACTIVE SEARCH PANEL");
-        System.out.println("  Use the GUI windows to run DFS, BFS, Distance D and Critical Path.");
+        separator("4-7. PAINEL DE BUSCA INTERATIVO");
+        System.out.println("  Use as janelas da interface gráfica para executar DFS, BFS, Distância D e Caminho Crítico.");
 
         SwingUtilities.invokeLater(() -> new SearchPanel(graph));
     }
@@ -383,8 +383,8 @@ public class Main {
     }
 
     /**
-     * Force dark theme colors globally on UIManager (fixes Windows white backgrounds).
-     * This is called AFTER setting the Look & Feel to override its defaults.
+     * Força as cores do tema escuro globalmente no UIManager (corrige fundos brancos no Windows).
+     * Isso é chamado APÓS definir o Look & Feel para substituir seus padrões.
      */
     private static void forceDarkThemeOnUIManager() {
         Color darkBg     = DesignSystem.DARK_SURFACE;
@@ -396,12 +396,12 @@ public class Main {
         UIManager.put("ComboBox.foreground", darkText);
         UIManager.put("ComboBox.buttonBackground", darkBg);
 
-        // ComboBox editor
+        // Editor do ComboBox
         UIManager.put("ComboBoxEditor.background", darkBg);
         UIManager.put("ComboBoxEditor.foreground", darkText);
         UIManager.put("ComboBoxEditor.border", darkBorder);
 
-        // ComboBox popup list
+        // Lista popup do ComboBox
         UIManager.put("List.background", darkBg);
         UIManager.put("List.foreground", darkText);
         UIManager.put("List.selectionBackground", DesignSystem.DARK_ACCENT);

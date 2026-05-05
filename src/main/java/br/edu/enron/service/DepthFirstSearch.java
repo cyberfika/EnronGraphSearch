@@ -8,45 +8,44 @@ import br.edu.enron.model.Vertex;
 import java.util.*;
 
 /**
- * Iterative depth-first search (DFS) over a {@link ContactGraph}.
+ * Busca em profundidade (DFS) iterativa sobre um {@link ContactGraph}.
  *
- * <h2>Algorithm</h2>
- * <p>The iterative approach uses an explicit {@link ArrayDeque} as a stack instead
- * of Java's call stack, which avoids {@code StackOverflowError} on large graphs
- * (the Enron dataset can have tens of thousands of vertices and hundreds of
- * thousands of edges).</p>
+ * <h2>Algoritmo</h2>
+ * <p>A abordagem iterativa usa um {@link ArrayDeque} explícito como pilha em vez da pilha de 
+ * chamadas do Java, o que evita o erro {@code StackOverflowError} em grafos grandes (o dataset 
+ * da Enron pode ter dezenas de milhares de vértices e centenas de milhares de arestas).</p>
  *
- * <p>Steps:</p>
+ * <p>Passos:</p>
  * <ol>
- *   <li>Push the origin vertex onto the stack.</li>
- *   <li>Pop the top vertex. If already visited, skip it.</li>
- *   <li>Mark it as visited.</li>
- *   <li>If it equals the destination, reconstruct and return the path.</li>
- *   <li>Push all unvisited neighbours onto the stack, recording their predecessor.</li>
- *   <li>Repeat until the stack is empty or the destination is found.</li>
+ *   <li>Empilha o vértice de origem na pilha.</li>
+ *   <li>Desempilha o vértice do topo. Se já foi visitado, pula.</li>
+ *   <li>Marca-o como visitado.</li>
+ *   <li>Se for igual ao destino, reconstrói e retorna o caminho.</li>
+ *   <li>Empilha todos os vizinhos não visitados na pilha, registrando seu antecessor.</li>
+ *   <li>Repete até que a pilha esteja vazia ou o destino seja encontrado.</li>
  * </ol>
  *
- * <h2>Cycle handling</h2>
- * <p>A {@code HashSet<Vertex>} of visited vertices ensures that no vertex is
- * processed more than once. Because a vertex is marked visited before its
- * neighbours are pushed, cycles cannot cause infinite loops.</p>
+ * <h2>Tratamento de ciclos</h2>
+ * <p>Um {@code HashSet<Vertex>} de vértices visitados garante que nenhum vértice seja processado 
+ * mais de uma vez. Como um vértice é marcado como visitado antes de seus vizinhos serem empilhados, 
+ * os ciclos não podem causar loops infinitos.</p>
  */
 public class DepthFirstSearch {
 
     /**
-     * Searches for a path from {@code originEmail} to {@code destinationEmail}
-     * using depth-first traversal.
+     * Procura por um caminho de {@code originEmail} para {@code destinationEmail}
+     * usando o percurso de busca em profundidade.
      *
-     * <p>The returned path is a sequence of vertices from origin to destination.
-     * It is not necessarily the shortest path — DFS explores as deep as possible
-     * before backtracking, so the route depends on adjacency order.</p>
+     * <p>O caminho retornado é uma sequência de vértices da origem ao destino. 
+     * Não é necessariamente o caminho mais curto — a DFS explora o mais profundo possível 
+     * antes de retroceder (backtracking), portanto a rota depende da ordem de adjacência.</p>
      *
-     * @param graph            the contact graph to search; must not be {@code null}.
-     * @param originEmail      the starting vertex's email; must not be {@code null}.
-     * @param destinationEmail the target vertex's email; must not be {@code null}.
-     * @return a {@link PathResult} containing the path if found, or an empty result
-     *         if no path exists or either vertex is absent from the graph.
-     * @throws IllegalArgumentException if any argument is {@code null} or blank.
+     * @param graph            o grafo de contatos para pesquisar; não deve ser {@code null}.
+     * @param originEmail      o e-mail do vértice de partida; não deve ser {@code null}.
+     * @param destinationEmail o e-mail do vértice de destino; não deve ser {@code null}.
+     * @return um {@link PathResult} contendo o caminho se encontrado, ou um resultado vazio 
+     *         se não existir caminho ou se qualquer um dos vértices estiver ausente no grafo.
+     * @throws IllegalArgumentException se qualquer argumento for {@code null} ou vazio.
      */
     public PathResult search(ContactGraph graph, String originEmail, String destinationEmail) {
         validateArgs(graph, originEmail, destinationEmail);
@@ -60,9 +59,9 @@ public class DepthFirstSearch {
 
         if (source.equals(destination)) return new PathResult(List.of(source));
 
-        // visited set prevents revisiting vertices in cyclic graphs
+        // conjunto de visitados impede revisitar vértices em grafos cíclicos
         Set<Vertex>        visited     = new HashSet<>();
-        // predecessor map allows path reconstruction without storing the full path per stack entry
+        // mapa de antecessores permite a reconstrução do caminho sem armazenar o caminho completo por entrada na pilha
         Map<Vertex, Vertex> predecessor = new HashMap<>();
         Deque<Vertex>      stack       = new ArrayDeque<>();
 
@@ -90,21 +89,21 @@ public class DepthFirstSearch {
             }
         }
 
-        return new PathResult(List.of()); // destination not reachable
+        return new PathResult(List.of()); // destino não alcançável
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Reconstructs the path from {@code source} to {@code destination} by
-     * following the predecessor map backwards and reversing the result.
+     * Reconstrói o caminho de {@code source} para {@code destination} seguindo o 
+     * mapa de antecessores de trás para frente e invertendo o resultado.
      *
-     * @param predecessor map from each vertex to the vertex it was reached from.
-     * @param source      the origin vertex.
-     * @param destination the target vertex.
-     * @return ordered list from source to destination.
+     * @param predecessor mapa de cada vértice para o vértice do qual ele foi alcançado.
+     * @param source      o vértice de origem.
+     * @param destination o vértice de destino.
+     * @return lista ordenada da origem ao destino.
      */
     private List<Vertex> reconstructPath(Map<Vertex, Vertex> predecessor,
                                          Vertex source, Vertex destination) {
@@ -114,18 +113,18 @@ public class DepthFirstSearch {
             path.addFirst(current);
             current = predecessor.get(current);
         }
-        // Safety check: if reconstruction does not reach the source something went wrong
+        // Verificação de segurança: se a reconstrução não atingir a origem, algo deu errado
         if (path.isEmpty() || !path.getFirst().equals(source)) return List.of();
         return path;
     }
 
     /**
-     * Validates that none of the arguments is {@code null} or blank.
+     * Valida que nenhum dos argumentos seja {@code null} ou vazio.
      *
-     * @param graph            the graph argument.
-     * @param originEmail      the origin email argument.
-     * @param destinationEmail the destination email argument.
-     * @throws IllegalArgumentException on invalid input.
+     * @param graph            o argumento do grafo.
+     * @param originEmail      o argumento do e-mail de origem.
+     * @param destinationEmail o argumento do e-mail de destino.
+     * @throws IllegalArgumentException em caso de entrada inválida.
      */
     private void validateArgs(ContactGraph graph, String originEmail, String destinationEmail) {
         if (graph == null) throw new IllegalArgumentException("Graph must not be null.");

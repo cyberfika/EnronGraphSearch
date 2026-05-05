@@ -6,37 +6,37 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Holds the data extracted from a single raw email file.
+ * Contém os dados extraídos de um único arquivo de e-mail bruto.
  *
- * <p>This class does <em>not</em> represent the entire raw file — only the fields
- * relevant for graph construction: the sender address and the list of recipient
- * addresses. One {@code EmailMessage} can produce multiple graph edges, one for
- * each distinct recipient.</p>
+ * <p>Esta classe <em>não</em> representa todo o arquivo bruto — apenas os campos 
+ * relevantes para a construção do grafo: o endereço do remetente e a lista de 
+ * endereços de destinatários. Um {@code EmailMessage} pode produzir várias arestas 
+ * no grafo, uma para cada destinatário distinto.</p>
  *
- * <p>Duplicate recipients within the same message are deduplicated at construction
- * time so that a single email cannot inflate edge weights artificially.</p>
+ * <p>Destinatários duplicados na mesma mensagem são removidos no momento da construção 
+ * para que um único e-mail não infle artificialmente os pesos das arestas.</p>
  */
 public final class EmailMessage {
 
-    /** Normalized sender email address. */
+    /** Endereço de e-mail normalizado do remetente. */
     private final String sender;
 
     /**
-     * Deduplicated, ordered list of normalized recipient email addresses.
-     * Stored as an unmodifiable view to protect internal state.
+     * Lista ordenada e sem duplicatas de endereços de e-mail de destinatários normalizados.
+     * Armazenada como uma visão imutável para proteger o estado interno.
      */
     private final List<String> recipients;
 
     /**
-     * Constructs an {@code EmailMessage} with the given sender and recipients.
+     * Constrói um {@code EmailMessage} com o remetente e os destinatários fornecidos.
      *
-     * <p>Duplicate recipient addresses (after normalization) are silently removed.
-     * {@code null} or blank entries in the recipients list are also discarded.</p>
+     * <p>Endereços de destinatários duplicados (após a normalização) são removidos silenciosamente. 
+     * Entradas {@code null} ou vazias na lista de destinatários também são descartadas.</p>
      *
-     * @param sender     the raw sender address; must not be {@code null} or blank.
-     * @param recipients raw list of recipient addresses; must not be {@code null}.
-     * @throws IllegalArgumentException if {@code sender} is {@code null} or blank,
-     *                                  or if {@code recipients} is {@code null}.
+     * @param sender      o endereço do remetente bruto; não deve ser {@code null} ou vazio.
+     * @param recipients  lista bruta de endereços de destinatários; não deve ser {@code null}.
+     * @throws IllegalArgumentException se {@code sender} for {@code null} ou vazio, 
+     *                                  ou se {@code recipients} for {@code null}.
      */
     public EmailMessage(String sender, List<String> recipients) {
         if (sender == null || sender.isBlank()) {
@@ -48,7 +48,7 @@ public final class EmailMessage {
 
         this.sender = sender.trim().toLowerCase();
 
-        // Deduplicate and filter invalid entries while preserving insertion order
+        // Remover duplicatas e filtrar entradas inválidas preservando a ordem de inserção
         Set<String> seen = new LinkedHashSet<>();
         for (String r : recipients) {
             if (r != null && !r.isBlank()) {
@@ -59,37 +59,37 @@ public final class EmailMessage {
     }
 
     /**
-     * Returns the normalized sender email address.
+     * Retorna o endereço de e-mail normalizado do remetente.
      *
-     * @return the sender address in lowercase, without surrounding whitespace.
+     * @return o endereço do remetente em letras minúsculas, sem espaços nas extremidades.
      */
     public String getSender() {
         return sender;
     }
 
     /**
-     * Returns an unmodifiable, deduplicated list of normalized recipient addresses.
+     * Retorna uma lista imutável e sem duplicatas de endereços de destinatários normalizados.
      *
-     * @return list of recipient emails; never {@code null}, may be empty.
+     * @return lista de e-mails de destinatários; nunca {@code null}, pode estar vazia.
      */
     public List<String> getRecipients() {
         return recipients;
     }
 
     /**
-     * Determines whether this message carries enough data to produce at least one
-     * graph edge: a non-blank sender and at least one recipient.
+     * Determina se esta mensagem carrega dados suficientes para produzir pelo menos uma 
+     * aresta do grafo: um remetente não vazio e pelo menos um destinatário.
      *
-     * @return {@code true} if the message is usable for graph construction.
+     * @return {@code true} se a mensagem for utilizável para a construção do grafo.
      */
     public boolean hasValidData() {
         return !sender.isBlank() && !recipients.isEmpty();
     }
 
     /**
-     * Returns a compact string representation for logging and debugging.
+     * Retorna uma representação em string compacta para fins de log e depuração.
      *
-     * @return formatted summary of sender and recipient count.
+     * @return resumo formatado do remetente e contagem de destinatários.
      */
     @Override
     public String toString() {

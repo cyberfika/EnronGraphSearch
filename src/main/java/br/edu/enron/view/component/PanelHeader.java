@@ -10,13 +10,13 @@ import java.awt.*;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Rich panel header matching the design_template panel-header.
+ * Cabeçalho de painel rico correspondente ao panel-header do design_template.
  *
- * <p>Layout (top to bottom inside a bordered panel):</p>
+ * <p>Layout (de cima para baixo dentro de um painel com borda):</p>
  * <pre>
- *   — eyebrow text (monospace, small, muted)
- *   Title normal  <em>accent italic</em>  title end.     [pill] [pill]
- *   Subtitle / description text (sans-serif, muted)
+ *   — texto de sobrancelha (monoespaçado, pequeno, suave)
+ *   Título normal  <em>ênfase itálico</em>  fim do título.     [pílula] [pílula]
+ *   Subtítulo / texto de descrição (sem serifa, suave)
  * </pre>
  */
 public final class PanelHeader extends JPanel {
@@ -36,13 +36,13 @@ public final class PanelHeader extends JPanel {
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.setOpaque(false);
 
-        // Eyebrow
+        // Sobrancelha (Eyebrow)
         JLabel eyeLbl = lbl("— " + eyebrow, MONO_XS, DesignSystem.muted());
         eyeLbl.setAlignmentX(LEFT_ALIGNMENT);
         left.add(eyeLbl);
         left.add(Box.createVerticalStrut(8));
 
-        // Title row
+        // Linha do título
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titleRow.setOpaque(false);
         titleRow.setAlignmentX(LEFT_ALIGNMENT);
@@ -54,7 +54,7 @@ public final class PanelHeader extends JPanel {
         left.add(titleRow);
         left.add(Box.createVerticalStrut(8));
 
-        // Subtitle
+        // Subtítulo
         JLabel subLbl = new JLabel(
                 "<html><body style='width:520px'>" + subtitle + "</body></html>");
         subLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
@@ -64,7 +64,7 @@ public final class PanelHeader extends JPanel {
 
         add(left, BorderLayout.CENTER);
 
-        // Pills (right-aligned)
+        // Pílulas (alinhadas à direita)
         if (pills.length > 0) {
             JPanel pillBox = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
             pillBox.setOpaque(false);

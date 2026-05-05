@@ -12,10 +12,10 @@ import java.time.format.DateTimeFormatter;
 import static br.edu.enron.view.component.SwingHelper.*;
 
 /**
- * Bottom status bar matching the design_template statusbar.
+ * Barra de status inferior correspondente à statusbar do design_template.
  *
- * <p>Shows: live indicator, JVM version, graph stats, active panel name,
- * main class path, and a ticking clock.</p>
+ * <p>Mostra: indicador live, versão da JVM, estatísticas do grafo, nome do painel ativo,
+ * caminho da classe principal e um relógio.</p>
  */
 public final class StatusBar extends JPanel {
 
@@ -51,11 +51,11 @@ public final class StatusBar extends JPanel {
         add(left, BorderLayout.WEST);
         add(right, BorderLayout.EAST);
 
-        // Tick every second
+        // Atualizar a cada segundo
         new Timer(1000, e -> clockLabel.setText(currentTime())).start();
     }
 
-    /** Update the active-panel portion of the status bar. */
+    /** Atualiza a parte do painel ativo na barra de status. */
     public void setActivePanel(String name) {
         panelLabel.setText(name.toUpperCase());
     }

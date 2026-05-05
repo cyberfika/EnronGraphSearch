@@ -8,46 +8,46 @@ import br.edu.enron.model.Vertex;
 import java.util.*;
 
 /**
- * Breadth-first search (BFS) over a {@link ContactGraph}.
+ * Busca em largura (BFS) sobre um {@link ContactGraph}.
  *
- * <h2>Algorithm</h2>
- * <p>BFS uses a FIFO {@link ArrayDeque} as a queue and expands vertices level by
- * level (one edge at a time). This guarantees that the first time the destination
- * is reached, the path found has the minimum number of edges — the shortest
- * unweighted path between origin and destination.</p>
+ * <h2>Algoritmo</h2>
+ * <p>A BFS usa uma fila FIFO {@link ArrayDeque} e expande os vértices nível por nível 
+ * (uma aresta de cada vez). Isso garante que a primeira vez que o destino for alcançado, 
+ * o caminho encontrado terá o número mínimo de arestas — o caminho mais curto não ponderado 
+ * entre a origem e o destino.</p>
  *
- * <p>Steps:</p>
+ * <p>Passos:</p>
  * <ol>
- *   <li>Enqueue the origin vertex and mark it as visited.</li>
- *   <li>Dequeue the front vertex.</li>
- *   <li>If it equals the destination, reconstruct and return the path.</li>
- *   <li>Enqueue all unvisited out-neighbours and record their predecessor.</li>
- *   <li>Repeat until the queue is empty or the destination is found.</li>
+ *   <li>Enfileira o vértice de origem e marca-o como visitado.</li>
+ *   <li>Desenfileira o vértice da frente.</li>
+ *   <li>Se for igual ao destino, reconstrói e retorna o caminho.</li>
+ *   <li>Enfileira todos os vizinhos de saída não visitados e registra seu antecessor.</li>
+ *   <li>Repete até que a fila esteja vazia ou o destino seja encontrado.</li>
  * </ol>
  *
- * <h2>Cycle handling</h2>
- * <p>A vertex is added to the visited set as soon as it is <em>enqueued</em> (not
- * when it is dequeued), so that the same vertex cannot be added to the queue more
- * than once even if multiple paths lead to it. This correctly prevents both cycles
- * and redundant processing.</p>
+ * <h2>Tratamento de ciclos</h2>
+ * <p>Um vértice é adicionado ao conjunto de visitados assim que é <em>enfileirado</em> 
+ * (não quando é desenfileirado), para que o mesmo vértice não possa ser adicionado à fila 
+ * mais de uma vez, mesmo que múltiplos caminhos levem a ele. Isso evita corretamente tanto 
+ * ciclos quanto processamento redundante.</p>
  *
- * <h2>Difference from DFS</h2>
- * <p>DFS uses a stack (LIFO) and may return a longer path. BFS uses a queue (FIFO)
- * and always returns the path with the fewest edges. Neither is better in general;
- * the choice depends on the use case.</p>
+ * <h2>Diferença da DFS</h2>
+ * <p>A DFS usa uma pilha (LIFO) e pode retornar um caminho mais longo. A BFS usa uma fila 
+ * (FIFO) e sempre retorna o caminho com o menor número de arestas. Nenhuma é melhor em geral; 
+ * a escolha depende do caso de uso.</p>
  */
 public class BreadthFirstSearch {
 
     /**
-     * Searches for the shortest (fewest-edge) path from {@code originEmail} to
-     * {@code destinationEmail} using breadth-first traversal.
+     * Procura pelo caminho mais curto (com menos arestas) de {@code originEmail} para
+     * {@code destinationEmail} usando o percurso de busca em largura.
      *
-     * @param graph            the contact graph to search; must not be {@code null}.
-     * @param originEmail      the starting vertex's email; must not be {@code null}.
-     * @param destinationEmail the target vertex's email; must not be {@code null}.
-     * @return a {@link PathResult} with the minimum-edge path if found, or an empty
-     *         result if no path exists or either vertex is absent from the graph.
-     * @throws IllegalArgumentException if any argument is {@code null} or blank.
+     * @param graph            o grafo de contatos para pesquisar; não deve ser {@code null}.
+     * @param originEmail      o e-mail do vértice de partida; não deve ser {@code null}.
+     * @param destinationEmail o e-mail do vértice de destino; não deve ser {@code null}.
+     * @return um {@link PathResult} com o caminho de arestas mínimas se encontrado, ou um resultado 
+     *         vazio se não existir caminho ou se qualquer um dos vértices estiver ausente no grafo.
+     * @throws IllegalArgumentException se qualquer argumento for {@code null} ou vazio.
      */
     public PathResult search(ContactGraph graph, String originEmail, String destinationEmail) {
         validateArgs(graph, originEmail, destinationEmail);
@@ -61,8 +61,8 @@ public class BreadthFirstSearch {
 
         if (source.equals(destination)) return new PathResult(List.of(source));
 
-        // Visited set: vertices are marked when enqueued, not when dequeued.
-        // This is crucial for BFS correctness in cyclic graphs.
+        // Conjunto de visitados: os vértices são marcados quando enfileirados, não quando desenfileirados.
+        // Isso é crucial para a correção da BFS em grafos cíclicos.
         Set<Vertex>         visited     = new HashSet<>();
         Map<Vertex, Vertex> predecessor = new HashMap<>();
         Deque<Vertex>       queue       = new ArrayDeque<>();
@@ -88,21 +88,21 @@ public class BreadthFirstSearch {
             }
         }
 
-        return new PathResult(List.of()); // destination not reachable
+        return new PathResult(List.of()); // destino não alcançável
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Reconstructs the path from {@code source} to {@code destination} using the
-     * predecessor map filled during the BFS traversal.
+     * Reconstrói o caminho de {@code source} para {@code destination} usando o 
+     * mapa de antecessores preenchido durante o percurso BFS.
      *
-     * @param predecessor map from each vertex to the vertex it was reached from.
-     * @param source      the origin vertex.
-     * @param destination the target vertex.
-     * @return ordered list from source to destination.
+     * @param predecessor mapa de cada vértice para o vértice do qual ele foi alcançado.
+     * @param source      o vértice de origem.
+     * @param destination o vértice de destino.
+     * @return lista ordenada da origem ao destino.
      */
     private List<Vertex> reconstructPath(Map<Vertex, Vertex> predecessor,
                                           Vertex source, Vertex destination) {
@@ -117,12 +117,12 @@ public class BreadthFirstSearch {
     }
 
     /**
-     * Validates that none of the arguments is {@code null} or blank.
+     * Valida que nenhum dos argumentos seja {@code null} ou vazio.
      *
-     * @param graph            the graph argument.
-     * @param originEmail      the origin email argument.
-     * @param destinationEmail the destination email argument.
-     * @throws IllegalArgumentException on invalid input.
+     * @param graph            o argumento do grafo.
+     * @param originEmail      o argumento do e-mail de origem.
+     * @param destinationEmail o argumento do e-mail de destino.
+     * @throws IllegalArgumentException em caso de entrada inválida.
      */
     private void validateArgs(ContactGraph graph, String originEmail, String destinationEmail) {
         if (graph == null) throw new IllegalArgumentException("Graph must not be null.");

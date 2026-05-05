@@ -9,27 +9,27 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Provides high-level analytical queries over a {@link ContactGraph}.
+ * Fornece consultas analíticas de alto nível sobre um {@link ContactGraph}.
  *
- * <p>This service is the direct mapping to the graded evaluation criteria:</p>
+ * <p>Este serviço é o mapeamento direto para os critérios de avaliação:</p>
  * <ul>
- *   <li>Vertex and edge counts (0.25 pt each).</li>
- *   <li>Top-20 out-degree and top-20 in-degree lists (0.25 pt each).</li>
+ *   <li>Contagens de vértices e arestas (0,25 pt cada).</li>
+ *   <li>Listas dos top-20 graus de saída e top-20 graus de entrada (0,25 pt cada).</li>
  * </ul>
  *
- * <p>All ranking is performed with the natural ordering defined in
- * {@link DegreeResult}: descending degree, then ascending email for tie-breaking.</p>
+ * <p>Todas as classificações são realizadas com a ordenação natural definida em
+ * {@link DegreeResult}: grau decrescente e e-mail crescente para desempate.</p>
  */
 public class ContactAnalyzer {
 
-    /** The graph on which all queries operate. */
+    /** O grafo sobre o qual todas as consultas operam. */
     private final ContactGraph graph;
 
     /**
-     * Constructs a {@code ContactAnalyzer} bound to the given graph.
+     * Constrói um {@code ContactAnalyzer} vinculado ao grafo fornecido.
      *
-     * @param graph the contact graph; must not be {@code null}.
-     * @throws IllegalArgumentException if {@code graph} is {@code null}.
+     * @param graph o grafo de contatos; não deve ser {@code null}.
+     * @throws IllegalArgumentException se {@code graph} for {@code null}.
      */
     public ContactAnalyzer(ContactGraph graph) {
         if (graph == null) throw new IllegalArgumentException("Graph must not be null.");
@@ -37,58 +37,57 @@ public class ContactAnalyzer {
     }
 
     /**
-     * Returns the total number of vertices (unique email addresses) in the graph.
+     * Retorna o número total de vértices (endereços de e-mail únicos) no grafo.
      *
-     * @return vertex count.
+     * @return contagem de vértices.
      */
     public int getVertexCount() {
         return graph.vertexCount();
     }
 
     /**
-     * Returns the total number of directed edges (unique sender → recipient pairs)
-     * in the graph.
+     * Retorna o número total de arestas direcionadas (pares únicos remetente → destinatário) no grafo.
      *
-     * @return edge count.
+     * @return contagem de arestas.
      */
     public int getEdgeCount() {
         return graph.edgeCount();
     }
 
     /**
-     * Returns the top 20 vertices ranked by out-degree (number of distinct people
-     * they have sent at least one message to).
+     * Retorna os 20 principais vértices classificados pelo grau de saída (número de pessoas distintas 
+     * para as quais enviaram pelo menos uma mensagem).
      *
-     * <p>Ordering: descending degree; ties broken alphabetically by email.</p>
+     * <p>Ordenação: grau decrescente; desempate alfabético pelo e-mail.</p>
      *
-     * @return unmodifiable list of at most 20 {@link DegreeResult} entries.
+     * @return lista imutável de no máximo 20 entradas {@link DegreeResult}.
      */
     public List<DegreeResult> getTop20OutDegree() {
         return topN(20, true);
     }
 
     /**
-     * Returns the top 20 vertices ranked by in-degree (number of distinct people
-     * who have sent at least one message to them).
+     * Retorna os 20 principais vértices classificados pelo grau de entrada (número de pessoas distintas 
+     * que enviaram pelo menos uma mensagem para eles).
      *
-     * <p>Ordering: descending degree; ties broken alphabetically by email.</p>
+     * <p>Ordenação: grau decrescente; desempate alfabético pelo e-mail.</p>
      *
-     * @return unmodifiable list of at most 20 {@link DegreeResult} entries.
+     * @return lista imutável de no máximo 20 entradas {@link DegreeResult}.
      */
     public List<DegreeResult> getTop20InDegree() {
         return topN(20, false);
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Computes the top-N degree list for either direction.
+     * Calcula a lista dos principais N graus para qualquer direção.
      *
-     * @param n      maximum number of entries to return.
-     * @param outDir {@code true} for out-degree, {@code false} for in-degree.
-     * @return sorted, trimmed list.
+     * @param n      número máximo de entradas a serem retornadas.
+     * @param outDir {@code true} para grau de saída, {@code false} para grau de entrada.
+     * @return lista ordenada e limitada.
      */
     private List<DegreeResult> topN(int n, boolean outDir) {
         List<DegreeResult> results = new ArrayList<>();

@@ -11,34 +11,34 @@ import org.graphstream.ui.view.Viewer;
 import java.util.*;
 
 /**
- * Renders subsets of the {@link ContactGraph} using GraphStream.
+ * Renderiza subconjuntos do {@link ContactGraph} usando GraphStream.
  *
- * <h2>Visualisation modes</h2>
+ * <h2>Modos de visualização</h2>
  * <ol>
- *   <li><b>Top-N</b> ({@link #displayTopN}) — shows the N highest-degree nodes
- *       and edges between them. Good for an overview.</li>
- *   <li><b>Path result</b> ({@link #displayWithPath}) — shows only the nodes
- *       and edges of a BFS/DFS/Dijkstra result, plus immediate neighbours
- *       for context.</li>
- *   <li><b>Ego network</b> ({@link #displayEgoNetwork}) — shows a chosen node
- *       and everything within K hops.</li>
+ *   <li><b>Top-N</b> ({@link #displayTopN}) — mostra os N nós de maior grau
+ *       e as arestas entre eles. Útil para uma visão geral.</li>
+ *   <li><b>Resultado de caminho</b> ({@link #displayWithPath}) — mostra apenas os nós
+ *       e arestas de um resultado BFS/DFS/Dijkstra, além dos vizinhos imediatos
+ *       para contexto.</li>
+ *   <li><b>Rede ego</b> ({@link #displayEgoNetwork}) — mostra um nó escolhido
+ *       e tudo dentro de K saltos.</li>
  * </ol>
  *
- * <p>Node size is proportional to degree. Labels are only shown on the
- * most important nodes to keep the display readable.</p>
+ * <p>O tamanho do nó é proporcional ao seu grau. Os rótulos são mostrados apenas nos
+ * nós mais importantes para manter a exibição legível.</p>
  */
 public class GraphVisualizer {
 
     private static final int DEFAULT_TOP_N = 30;
     private static final int MAX_LABELLED  = 25;
 
-    // ── Dark-themed stylesheet with degree-scaled nodes ────────────────────
+    // ── Folha de estilo de tema escuro com nós dimensionados por grau ────────
     private static final String STYLESHEET =
             "graph { fill-color: #252A32; padding: 60px; }" +
             "node {" +
             "  fill-color: rgba(209,217,230,75);" +
             "  size: 7px;" +
-            "  text-size: 0;" +                 // hidden by default
+            "  text-size: 0;" +                 // oculto por padrão
             "  stroke-mode: none;" +
             "  z-index: 1;" +
             "}" +
@@ -126,12 +126,12 @@ public class GraphVisualizer {
             "}";
 
     // =====================================================================
-    // Mode 1 — Top-N overview (default for "show graph" button)
+    // Modo 1 — Visão geral Top-N (padrão para o botão "show graph")
     // =====================================================================
 
     /**
-     * Displays the top-N nodes by degree with edges between them.
-     * Node size scales with degree. Only top nodes get labels.
+     * Exibe os principais N nós por grau com as arestas entre eles.
+     * O tamanho do nó escala com o grau. Apenas os nós do topo recebem rótulos.
      */
     public void display(ContactGraph graph, String title) {
         displayTopN(graph, title, DEFAULT_TOP_N);
@@ -155,12 +155,12 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Mode 2 — Path result (BFS / DFS / Dijkstra)
+    // Modo 2 — Resultado de caminho (BFS / DFS / Dijkstra)
     // =====================================================================
 
     /**
-     * Displays only the path and its immediate neighbourhood.
-     * Path nodes are highlighted; endpoints are green.
+     * Exibe apenas o caminho e sua vizinhança imediata.
+     * Os nós do caminho são destacados; as extremidades ficam brancas com borda amarela.
      */
     public void displayWithPath(ContactGraph graph, PathResult path,
                                 String title, String label) {
@@ -176,12 +176,12 @@ public class GraphVisualizer {
         ContactGraph sub = buildSubgraph(graph, seeds);
         Graph gs = toGsGraph(sub, title, graph);
 
-        // Scale non-path nodes
+        // Dimensionar nós que não pertencem ao caminho
         Set<String> pathEmails = new HashSet<>();
         for (Vertex v : path.getVertices()) pathEmails.add(v.getEmail());
-        applyDegreeScaling(gs, graph, seeds, 0); // no labels on context nodes
+        applyDegreeScaling(gs, graph, seeds, 0); // sem rótulos nos nós de contexto
 
-        // Highlight path
+        // Destacar caminho
         highlightPath(gs, path);
 
         gs.setAttribute("ui.stylesheet", STYLESHEET);
@@ -195,12 +195,12 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Mode 3 — Ego network (K hops from a node)
+    // Modo 3 — Rede ego (K saltos a partir de um nó)
     // =====================================================================
 
     /**
-     * Displays the neighbourhood of a given node up to K hops.
-     * The center node is highlighted in gold.
+     * Exibe a vizinhança de um determinado nó até K saltos.
+     * O nó central é destacado em dourado.
      */
     public void displayEgoNetwork(ContactGraph graph, String centerEmail,
                                   int hops, String title) {
@@ -208,7 +208,7 @@ public class GraphVisualizer {
 
         Optional<Vertex> opt = graph.findVertex(centerEmail);
         if (opt.isEmpty()) {
-            System.out.println("[Visualizer] Node not found: " + centerEmail);
+            System.out.println("[Visualizer] Nó não encontrado: " + centerEmail);
             return;
         }
 
@@ -218,7 +218,7 @@ public class GraphVisualizer {
 
         applyDegreeScaling(gs, graph, seeds, MAX_LABELLED);
 
-        // Mark center
+        // Marcar centro
         org.graphstream.graph.Node center = gs.getNode(centerEmail);
         if (center != null) {
             center.setAttribute("ui.class", "ego");
@@ -235,7 +235,7 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Graph construction helpers
+    // Auxiliares de construção do grafo
     // =====================================================================
 
     private Graph toGsGraph(ContactGraph sub, String id, ContactGraph fullGraph) {
@@ -254,7 +254,7 @@ public class GraphVisualizer {
                         e.getDestination().getEmail(),
                         true);
                 ge.setAttribute("ui.label", String.valueOf(e.getWeight()));
-                // Mark strong edges
+                // Marcar arestas fortes
                 if (e.getWeight() >= 5) {
                     ge.setAttribute("ui.class", "strong");
                 }
@@ -279,16 +279,16 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Degree scaling & labelling
+    // Dimensionamento por grau e rotulagem
     // =====================================================================
 
     /**
-     * Scales node size by degree (in the full graph) and shows labels
-     * only on the top-labelled nodes.
+     * Dimensiona o tamanho do nó pelo grau (no grafo completo) e mostra rótulos
+     * apenas nos nós mais importantes (top-labelled).
      */
     private void applyDegreeScaling(Graph gs, ContactGraph fullGraph,
                                     Set<Vertex> seeds, int maxLabels) {
-        // Compute degree for sorting
+        // Calcular grau para ordenação
         List<Map.Entry<String, Integer>> ranked = new ArrayList<>();
         for (Vertex v : seeds) {
             int deg = fullGraph.outDegree(v) + fullGraph.inDegree(v);
@@ -298,7 +298,7 @@ public class GraphVisualizer {
 
         int maxDeg = ranked.isEmpty() ? 1 : Math.max(ranked.get(0).getValue(), 1);
 
-        // Top N get labels
+        // Top N recebem rótulos
         Set<String> labelled = new HashSet<>();
         for (int i = 0; i < Math.min(maxLabels, ranked.size()); i++) {
             labelled.add(ranked.get(i).getKey());
@@ -322,7 +322,7 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Path highlighting
+    // Destaque de caminho
     // =====================================================================
 
     private void highlightPath(Graph gs, PathResult path) {
@@ -344,7 +344,7 @@ public class GraphVisualizer {
                     (i == 0 || i == verts.size() - 1) ? 28 : 22);
         }
 
-        // Highlight edges along path
+        // Destacar arestas ao longo do caminho
         for (int i = 0; i < verts.size() - 1; i++) {
             String from = verts.get(i).getEmail();
             String to = verts.get(i + 1).getEmail();
@@ -382,7 +382,7 @@ public class GraphVisualizer {
     }
 
     // =====================================================================
-    // Selection helpers
+    // Auxiliares de seleção
     // =====================================================================
 
     private Set<Vertex> topNByTotalDegree(ContactGraph graph, int n) {
@@ -424,7 +424,7 @@ public class GraphVisualizer {
         return visited;
     }
 
-    /** Extracts username from email for compact labels. */
+    /** Extrai o nome de usuário do e-mail para rótulos compactos. */
     private static String shortLabel(String email) {
         int at = email.indexOf('@');
         return at > 0 ? email.substring(0, at) : email;

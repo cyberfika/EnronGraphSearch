@@ -7,50 +7,51 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Parses the raw text content of a single Enron email file and extracts the
- * sender and recipient addresses needed for graph construction.
+ * Analisa o conteúdo de texto bruto de um único arquivo de e-mail da Enron e extrai 
+ * os endereços de remetente e destinatário necessários para a construção do grafo.
  *
- * <h2>Parsing strategy</h2>
- * <p>Enron email files follow the RFC 2822 format: a header block at the top,
- * separated from the message body by the first blank line. This parser reads
- * <em>only</em> the initial header block and stops at the first blank line.
- * Any quoted or forwarded headers embedded inside the body (e.g., lines beginning
- * with {@code >}, or blocks introduced by {@code -----Original Message-----})
- * are completely ignored, because they belong to earlier messages in the thread
- * and would distort edge weights if processed.</p>
+ * <h2>Estratégia de análise (parsing)</h2>
+ * <p>Os arquivos de e-mail da Enron seguem o formato RFC 2822: um bloco de cabeçalho 
+ * no topo, separado do corpo da mensagem pela primeira linha em branco. Este analisador 
+ * lê <em>apenas</em> o bloco de cabeçalho inicial e para na primeira linha em branco. 
+ * Quaisquer cabeçalhos citados ou encaminhados incorporados dentro do corpo (ex: linhas 
+ * que começam com {@code >}, ou blocos introduzidos por {@code -----Original Message-----}) 
+ * são completamente ignorados, pois pertencem a mensagens anteriores na conversa 
+ * e distorceriam os pesos das arestas se processados.</p>
  *
- * <h2>Fields extracted</h2>
+ * <h2>Campos extraídos</h2>
  * <ul>
- *   <li>{@code From:} — sender address (one value).</li>
- *   <li>{@code To:} — comma-separated recipient addresses.</li>
+ *   <li>{@code From:} — endereço do remetente (um único valor).</li>
+ *   <li>{@code To:} — endereços de destinatários separados por vírgula.</li>
  * </ul>
- * <p>{@code Cc:} and {@code Bcc:} are deliberately excluded: the dataset's
- * {@code sent} / {@code _sent_mail} folders reflect the sender's perspective, and
- * the {@code To:} field already captures direct recipients. Including Cc/Bcc would
- * require a policy decision about whether a copy constitutes the same kind of
- * communication dependency, which is outside the project's scope.</p>
+ * <p>{@code Cc:} e {@code Bcc:} são deliberadamente excluídos: as pastas {@code sent} / 
+ * {@code _sent_mail} do dataset refletem a perspectiva do remetente, e o campo {@code To:} 
+ * já captura os destinatários diretos. Incluir Cc/Bcc exigiria uma decisão de política 
+ * sobre se uma cópia constitui o mesmo tipo de dependência de comunicação, o que está 
+ * fora do escopo do projeto.</p>
  *
- * <h2>Limitations</h2>
+ * <h2>Limitações</h2>
  * <ul>
- *   <li>Multi-line header folding (a continuation line starting with whitespace)
- *       is handled for {@code To:} by appending folded lines to the current field.</li>
- *   <li>Addresses that do not contain {@code @} are discarded by
+ *   <li>O dobramento de cabeçalho em várias linhas (uma linha de continuação que começa 
+ *       com espaço em branco) é tratado para {@code To:} anexando as linhas dobradas 
+ *       ao campo atual.</li>
+ *   <li>Endereços que não contêm {@code @} são descartados por 
  *       {@link EmailValidator#isValid(String)}.</li>
  * </ul>
  */
 public class EmailParser {
 
     /**
-     * Parses the raw content of one email file and returns an {@link EmailMessage}
-     * containing the normalized sender and recipient list extracted from the
-     * top-level header block only.
+     * Analisa o conteúdo bruto de um arquivo de e-mail e retorna um {@link EmailMessage}
+     * contendo a lista normalizada de remetente e destinatários extraída apenas do 
+     * bloco de cabeçalho de nível superior.
      *
-     * <p>If the content is {@code null}, blank, or lacks a valid {@code From:}
-     * header, the returned {@code EmailMessage} will have an empty recipient list
-     * and {@link EmailMessage#hasValidData()} will return {@code false}.</p>
+     * <p>Se o conteúdo for {@code null}, vazio ou carecer de um cabeçalho {@code From:} 
+     * válido, o {@code EmailMessage} retornado terá uma lista de destinatários vazia 
+     * e {@link EmailMessage#hasValidData()} retornará {@code false}.</p>
      *
-     * @param rawContent the full text of the email file; may be {@code null}.
-     * @return parsed {@link EmailMessage}; never {@code null}.
+     * @param rawContent o texto completo do arquivo de e-mail; pode ser {@code null}.
+     * @return {@link EmailMessage} analisado; nunca {@code null}.
      */
     public EmailMessage parse(String rawContent) {
         if (rawContent == null || rawContent.isBlank()) {
@@ -62,24 +63,24 @@ public class EmailParser {
 
         String[] lines = rawContent.split("\n", -1);
 
-        // Track which multi-line header we are currently accumulating
+        // Rastrear qual cabeçalho de várias linhas estamos acumulando no momento
         String currentField = null;
         StringBuilder currentValue = new StringBuilder();
 
         for (String rawLine : lines) {
-            // The first blank line marks the end of the header block — stop here.
+            // A primeira linha em branco marca o fim do bloco de cabeçalho — pare aqui.
             if (rawLine.isBlank()) break;
 
             boolean isFolded = rawLine.length() > 0
                     && (rawLine.charAt(0) == ' ' || rawLine.charAt(0) == '\t');
 
             if (isFolded && currentField != null) {
-                // Continuation of the previous header field
+                // Continuação do campo de cabeçalho anterior
                 currentValue.append(' ').append(rawLine.trim());
                 continue;
             }
 
-            // Before starting a new field, flush the previously accumulated one
+            // Antes de iniciar um novo campo, processe o que foi acumulado anteriormente
             if (currentField != null) {
                 processField(currentField, currentValue.toString(), recipients);
                 if ("from".equals(currentField) && sender == null) {
@@ -89,7 +90,7 @@ public class EmailParser {
                 currentValue.setLength(0);
             }
 
-            // Identify the new field
+            // Identificar o novo campo
             int colon = rawLine.indexOf(':');
             if (colon <= 0) continue;
 
@@ -100,10 +101,10 @@ public class EmailParser {
                 currentField = fieldName;
                 currentValue.append(fieldValue);
             }
-            // All other headers (Subject, Date, Message-ID, Cc, Bcc, X-*, …) are ignored
+            // Todos os outros cabeçalhos (Subject, Date, Message-ID, Cc, Bcc, X-*, …) são ignorados
         }
 
-        // Flush the last accumulated field
+        // Processar o último campo acumulado
         if (currentField != null) {
             if ("from".equals(currentField) && sender == null) {
                 sender = extractSingleAddress(currentValue.toString());
@@ -119,20 +120,20 @@ public class EmailParser {
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Auxiliares privados
     // -------------------------------------------------------------------------
 
     /**
-     * Appends valid recipient addresses parsed from a {@code To:} field value to
-     * the running list. Does nothing for non-{@code to} fields.
+     * Anexa endereços de destinatários válidos analisados a partir de um valor de campo 
+     * {@code To:} à lista em execução. Não faz nada para campos que não sejam {@code to}.
      *
-     * @param field     the lowercase header field name.
-     * @param value     the accumulated field value (may span multiple folded lines).
-     * @param recipients the list to append valid addresses to.
+     * @param field      o nome do campo de cabeçalho em minúsculas.
+     * @param value      o valor do campo acumulado (pode abranger várias linhas dobradas).
+     * @param recipients a lista na qual os endereços válidos serão anexados.
      */
     private void processField(String field, String value, List<String> recipients) {
         if (!"to".equals(field)) return;
-        // Recipients are comma-separated; split and validate each one
+        // Os destinatários são separados por vírgula; divida e valide cada um
         for (String part : value.split(",")) {
             String addr = EmailValidator.normalize(extractSingleAddress(part));
             if (EmailValidator.isValid(addr)) {
@@ -142,12 +143,12 @@ public class EmailParser {
     }
 
     /**
-     * Extracts a bare email address from a potentially display-name-qualified
-     * string such as {@code "John Doe <john@example.com>"} or simply
-     * {@code "john@example.com"}.
+     * Extrai um endereço de e-mail puro de uma string que pode estar qualificada 
+     * com um nome de exibição, como {@code "John Doe <john@example.com>"} ou 
+     * simplesmente {@code "john@example.com"}.
      *
-     * @param raw the raw address token.
-     * @return the bare address, or the trimmed input if no angle brackets are found.
+     * @param raw o token de endereço bruto.
+     * @return o endereço puro, ou a entrada limpa se nenhum colchete angular for encontrado.
      */
     private String extractSingleAddress(String raw) {
         if (raw == null) return "";
