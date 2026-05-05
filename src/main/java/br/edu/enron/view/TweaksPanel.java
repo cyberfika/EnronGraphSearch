@@ -98,6 +98,15 @@ public class TweaksPanel extends JDialog {
 
     private void updateTheme() {
         System.out.println("[Tweaks] Theme changed to: " + DesignSystem.getTheme());
+        DesignSystem.applyToUIManager();
+        Window owner = getOwner();
+        if (owner != null) {
+            SwingUtilities.updateComponentTreeUI(owner);
+            owner.invalidate();
+            owner.validate();
+            owner.repaint();
+        }
+        SwingUtilities.updateComponentTreeUI(this);
         // Notify listener if set
         if (themeChangeListener != null) {
             themeChangeListener.run();

@@ -1,0 +1,81 @@
+@startuml Diagrama_Comunicacao
+
+skinparam defaultFontSize 11
+
+title Diagrama de Comunicacao — Interacao Principal
+
+object "User" as U
+object "Main" as M
+object "SearchPanel\n<<JFrame>>" as SP
+object "Sidebar" as SB
+object "StatusBar" as STB
+object "OverviewPanel" as OP
+object "DfsBfsPanel" as DP
+object "DistancePanel" as DIP
+object "CriticalPathPanel" as CP
+object "TweaksPanel\n<<JDialog>>" as TP
+object "GraphVisualizer" as GV
+object "ContactGraph" as CG
+object "ContactAnalyzer" as CA
+object "DepthFirstSearch" as DFS
+object "BreadthFirstSearch" as BFS
+object "DistanceCalculator" as DC
+object "CriticalPathService" as CPS
+object "DesignSystem" as DS
+object "EnronDatasetReader" as EDR
+object "SwingHelper" as SH
+object "FontManager" as FM
+
+' --- Fluxo de inicializacao ---
+U --> M : 1: main(args)
+M --> EDR : 2: buildGraph(path)
+EDR --> CG : 3: addEdge() / addOwner()
+M --> SP : 4: new SearchPanel(graph)
+
+' --- Composicao da janela ---
+SP --> SB  : 5: new Sidebar(graph)
+SP --> STB : 6: new StatusBar(graph)
+SP --> OP  : 7: new OverviewPanel(graph, ...)
+SP --> DP  : 8: new DfsBfsPanel(graph, visualizer)
+SP --> DIP : 9: new DistancePanel(graph, visualizer)
+SP --> CP  : 10: new CriticalPathPanel(graph, visualizer)
+SP --> TP  : 11: new TweaksPanel(this)
+
+' --- Busca DFS/BFS ---
+U --> DP   : 12: click EXECUTAR
+DP --> DFS : 13a: search(graph, from, to) [DFS]
+DP --> BFS : 13b: search(graph, from, to) [BFS]
+DFS --> CG : 14: getOutEdges(), findVertex()
+BFS --> CG : 14: getOutEdges(), findVertex()
+DP --> GV  : 15: displayWithPath(graph, result)
+
+' --- Distancia ---
+U --> DIP  : 16: click COMPUTAR
+DIP --> DC : 17: getVerticesAtDistance(graph, from, d)
+DC --> CG  : 18: getOutEdges(), findVertex()
+
+' --- Ego Network ---
+U --> DIP  : 19: click EGO REDE
+DIP --> GV : 20: displayEgoNetwork(graph, email, hops)
+
+' --- Caminho Critico ---
+U --> CP    : 21: click CALCULAR
+CP --> CPS  : 22: computeCriticalPath(graph, from, to)
+CPS --> CG  : 23: getOutEdges(), findVertex()
+CP --> GV   : 24: displayWithPath(graph, result)
+
+' --- Visao Geral ---
+SP --> CA   : 25: getTop20OutDegree() / getTop20InDegree()
+CA --> CG   : 26: getVertices(), outDegree(), inDegree()
+
+' --- Tema ---
+U --> TP   : 27: toggle Dark/Light
+TP --> DS  : 28: setTheme(theme)
+TP --> SP  : 29: themeChangeListener.run()
+SP --> SP  : 30: refreshTheme() -> rebuild UI
+
+' --- Design System ---
+SH --> DS  : cores dinamicas
+SH --> FM  : fontes cross-platform
+
+@enduml

@@ -1,9 +1,11 @@
 package br.edu.enron.app;
 
+import br.edu.enron.design.DesignSystem;
 import br.edu.enron.graph.ContactGraph;
 import br.edu.enron.model.DegreeResult;
 import br.edu.enron.parser.EnronDatasetReader;
 import br.edu.enron.service.ContactAnalyzer;
+import br.edu.enron.util.FontManager;
 import br.edu.enron.view.SearchPanel;
 
 import javax.swing.*;
@@ -32,15 +34,14 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Main {
 
-    // ── colour palette shared by the welcome screen ──────────────────────────
-    private static final Color NAVY   = new Color(18,  50, 100);
-    private static final Color BLUE   = new Color(30,  90, 170);
-    private static final Color GREEN  = new Color(34, 153,  84);
-    private static final Color GREY   = new Color(90,  90,  90);
-    private static final Color LIGHT  = new Color(245, 247, 252);
-
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        // Use Nimbus L&F for consistent cross-platform color control
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        } catch (Exception e) {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        }
+        DesignSystem.applyToUIManager();
 
         if (args.length > 0) {
             // CLI path provided — skip welcome screen
@@ -82,21 +83,21 @@ public class Main {
 
         // ── root panel ───────────────────────────────────────────────────────
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(LIGHT);
+        root.setBackground(DesignSystem.DARK_BG);
 
         // ── header banner ────────────────────────────────────────────────────
         JPanel banner = new JPanel(new BorderLayout());
-        banner.setBackground(NAVY);
+        banner.setBackground(DesignSystem.DARK_SURFACE);
         banner.setBorder(new EmptyBorder(28, 32, 24, 32));
 
         JLabel title = new JLabel("Enron Graph Analyzer");
-        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 26));
-        title.setForeground(Color.WHITE);
+        title.setFont(FontManager.getSansSerifBoldFont(26));
+        title.setForeground(DesignSystem.DARK_INK);
 
         JLabel subtitle = new JLabel(
                 "Directed contact-graph analysis over the Enron Email Dataset");
-        subtitle.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        subtitle.setForeground(new Color(180, 205, 240));
+        subtitle.setFont(FontManager.getSansSerifFont(14));
+        subtitle.setForeground(DesignSystem.DARK_INK_2);
 
         banner.add(title,    BorderLayout.NORTH);
         banner.add(subtitle, BorderLayout.SOUTH);
@@ -105,16 +106,23 @@ public class Main {
         // ── centre: path selector + action cards ─────────────────────────────
         JPanel centre = new JPanel();
         centre.setLayout(new BoxLayout(centre, BoxLayout.Y_AXIS));
-        centre.setBackground(LIGHT);
+        centre.setBackground(DesignSystem.DARK_BG);
         centre.setBorder(new EmptyBorder(24, 32, 16, 32));
 
         // Path row
         JLabel pathLbl = new JLabel("Dataset folder (maildir):");
-        pathLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        pathLbl.setFont(FontManager.getSansSerifBoldFont(13));
+        pathLbl.setForeground(DesignSystem.DARK_INK);
         pathLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JTextField pathField = new JTextField();
-        pathField.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        pathField.setFont(FontManager.getMonospacedFont(12));
+        pathField.setBackground(DesignSystem.DARK_SURFACE);
+        pathField.setForeground(DesignSystem.DARK_INK);
+        pathField.setCaretColor(DesignSystem.DARK_INK);
+        pathField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(DesignSystem.DARK_RULE, 1),
+                BorderFactory.createEmptyBorder(4, 6, 4, 6)));
         pathField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         pathField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -122,11 +130,13 @@ public class Main {
         File autoMaildir = new File(System.getProperty("user.dir"), "data/maildir");
         if (autoMaildir.isDirectory()) {
             pathField.setText(autoMaildir.getAbsolutePath());
-            pathField.setForeground(new Color(30, 100, 30));
+            pathField.setForeground(DesignSystem.DARK_ACCENT);
         }
 
         JButton browseBtn = new JButton("  Browse…  ");
-        browseBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        browseBtn.setFont(FontManager.getSansSerifFont(12));
+        browseBtn.setBackground(DesignSystem.DARK_SURFACE_2);
+        browseBtn.setForeground(DesignSystem.DARK_INK);
         browseBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
         browseBtn.addActionListener(e -> {
             JFileChooser fc = new JFileChooser();
@@ -139,20 +149,21 @@ public class Main {
                     : new File(current));
             if (fc.showOpenDialog(dlg) == JFileChooser.APPROVE_OPTION) {
                 pathField.setText(fc.getSelectedFile().getAbsolutePath());
-                pathField.setForeground(new Color(30, 100, 30));
+                pathField.setForeground(DesignSystem.DARK_ACCENT);
             }
         });
 
         JPanel pathRow = new JPanel(new BorderLayout(8, 0));
-        pathRow.setBackground(LIGHT);
+        pathRow.setBackground(DesignSystem.DARK_BG);
         pathRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         pathRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         pathRow.add(pathField, BorderLayout.CENTER);
         pathRow.add(browseBtn, BorderLayout.EAST);
 
         JCheckBox rebuildCheck = new JCheckBox("Force cache rebuild (re-parse all files)");
-        rebuildCheck.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        rebuildCheck.setBackground(LIGHT);
+        rebuildCheck.setFont(FontManager.getSansSerifFont(12));
+        rebuildCheck.setBackground(DesignSystem.DARK_BG);
+        rebuildCheck.setForeground(DesignSystem.DARK_INK_2);
         rebuildCheck.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         centre.add(pathLbl);
@@ -164,7 +175,7 @@ public class Main {
 
         // ── action cards ─────────────────────────────────────────────────────
         JPanel cards = new JPanel(new GridLayout(1, 2, 16, 0));
-        cards.setBackground(LIGHT);
+        cards.setBackground(DesignSystem.DARK_BG);
         cards.setAlignmentX(Component.LEFT_ALIGNMENT);
         cards.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
 
@@ -172,7 +183,7 @@ public class Main {
         JPanel loadCard = actionCard(
                 "Load Enron Dataset",
                 "Reads 150 user mailboxes,\nbuilds the full contact graph.",
-                BLUE, () -> {
+                DesignSystem.DARK_ACCENT, () -> {
                     String path = pathField.getText().trim();
                     if (path.isEmpty()) {
                         JOptionPane.showMessageDialog(dlg,
@@ -188,7 +199,7 @@ public class Main {
         JPanel demoCard = actionCard(
                 "Demo Mode",
                 "Uses a small built-in graph\n(no dataset files required).",
-                GREEN, () -> {
+                DesignSystem.DARK_SURFACE_2, () -> {
                     result.set(new StartupChoice(false, true, null, false));
                     dlg.dispose();
                 });
@@ -201,12 +212,12 @@ public class Main {
 
         // ── footer ───────────────────────────────────────────────────────────
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        footer.setBackground(new Color(220, 225, 235));
+        footer.setBackground(DesignSystem.DARK_SURFACE);
         footer.setBorder(new EmptyBorder(4, 28, 4, 28));
         JLabel footerLbl = new JLabel(
                 "Java 17  ·  GraphStream 2.0  ·  Enron Email Dataset  ·  Graph Theory Project");
-        footerLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        footerLbl.setForeground(GREY);
+        footerLbl.setFont(FontManager.getSansSerifFont(11));
+        footerLbl.setForeground(DesignSystem.DARK_MUTED);
         footer.add(footerLbl);
         root.add(footer, BorderLayout.SOUTH);
 
@@ -235,16 +246,16 @@ public class Main {
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JLabel titleLbl = new JLabel(title);
-        titleLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
-        titleLbl.setForeground(Color.WHITE);
+        titleLbl.setFont(FontManager.getSansSerifBoldFont(15));
+        titleLbl.setForeground(DesignSystem.DARK_INK);
 
         String[] lines = desc.split("\n");
         JPanel descPanel = new JPanel(new GridLayout(lines.length, 1, 0, 2));
         descPanel.setOpaque(false);
         for (String line : lines) {
             JLabel l = new JLabel(line);
-            l.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-            l.setForeground(new Color(220, 235, 255));
+            l.setFont(FontManager.getSansSerifFont(12));
+            l.setForeground(DesignSystem.DARK_INK_2);
             descPanel.add(l);
         }
 
@@ -369,5 +380,43 @@ public class Main {
         for (int i = 0; i < results.size(); i++) {
             System.out.printf("  %2d. %s%n", i + 1, results.get(i));
         }
+    }
+
+    /**
+     * Force dark theme colors globally on UIManager (fixes Windows white backgrounds).
+     * This is called AFTER setting the Look & Feel to override its defaults.
+     */
+    private static void forceDarkThemeOnUIManager() {
+        Color darkBg     = DesignSystem.DARK_SURFACE;
+        Color darkText   = DesignSystem.DARK_INK_2;
+        Color darkBorder = DesignSystem.DARK_RULE;
+
+        // ComboBox
+        UIManager.put("ComboBox.background", darkBg);
+        UIManager.put("ComboBox.foreground", darkText);
+        UIManager.put("ComboBox.buttonBackground", darkBg);
+
+        // ComboBox editor
+        UIManager.put("ComboBoxEditor.background", darkBg);
+        UIManager.put("ComboBoxEditor.foreground", darkText);
+        UIManager.put("ComboBoxEditor.border", darkBorder);
+
+        // ComboBox popup list
+        UIManager.put("List.background", darkBg);
+        UIManager.put("List.foreground", darkText);
+        UIManager.put("List.selectionBackground", DesignSystem.DARK_ACCENT);
+        UIManager.put("List.selectionForeground", DesignSystem.DARK_BG);
+
+        // TextField
+        UIManager.put("TextField.background", darkBg);
+        UIManager.put("TextField.foreground", darkText);
+
+        // TextArea
+        UIManager.put("TextArea.background", darkBg);
+        UIManager.put("TextArea.foreground", darkText);
+
+        // Spinner
+        UIManager.put("Spinner.background", darkBg);
+        UIManager.put("Spinner.foreground", darkText);
     }
 }

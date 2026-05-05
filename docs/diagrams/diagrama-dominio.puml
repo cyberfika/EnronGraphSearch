@@ -1,0 +1,69 @@
+@startuml Diagrama_Dominio
+
+skinparam classFontSize 12
+skinparam linetype ortho
+
+title Diagrama de Dominio — Enron Graph Analyzer
+
+class "Individuo\n(Vertex)" as Individuo {
+    email : String
+}
+
+class "Contato\n(Edge)" as Contato {
+    peso : int
+    custoInverso : double
+}
+
+class "Grafo de Contatos\n(ContactGraph)" as Grafo {
+    totalVertices : int
+    totalArestas : int
+    proprietarios : Set<String>
+}
+
+class "Mensagem de Email\n(EmailMessage)" as Mensagem {
+    remetente : String
+    destinatarios : List<String>
+}
+
+class "Resultado de Grau\n(DegreeResult)" as Grau {
+    email : String
+    grau : int
+}
+
+class "Resultado de Caminho\n(PathResult)" as Caminho {
+    vertices : List<Vertex>
+    custoTotal : double
+    dependenciaAcumulada : double
+}
+
+class "Dataset Enron\n(EnronDatasetReader)" as Dataset {
+    raiz : Path
+}
+
+Grafo "1" *-- "*" Individuo : contem
+Grafo "1" *-- "*" Contato   : contem
+
+Contato "1" --> "1" Individuo : origem
+Contato "1" --> "1" Individuo : destino
+
+Dataset "1" --> "1" Grafo : constroi
+Dataset "1" ..> "*" Mensagem : parseia
+
+Caminho "*" --> "2..*" Individuo : percorre
+
+Individuo "1" --> "*" Grau : classificado por
+
+note right of Contato
+  peso = numero de emails
+  enviados de origem para destino.
+  custoInverso = 1 / peso
+  (usado pelo Dijkstra adaptado)
+end note
+
+note right of Grafo
+  Grafo direcionado, ponderado,
+  rotulado. Arestas representam
+  frequencia de comunicacao.
+end note
+
+@enduml
