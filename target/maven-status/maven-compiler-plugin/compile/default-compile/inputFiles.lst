@@ -1,0 +1,17 @@
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/view/GraphVisualizer.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/model/EmailMessage.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/view/SearchPanel.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/app/Main.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/service/DepthFirstSearch.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/model/Edge.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/service/CriticalPathService.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/service/BreadthFirstSearch.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/model/Vertex.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/service/DistanceCalculator.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/parser/EmailParser.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/util/EmailValidator.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/model/DegreeResult.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/graph/ContactGraph.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/parser/EnronDatasetReader.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/model/PathResult.java
+/Users/jafte/Documents/GitHub/Grafos/Enron_GraphAnalyzer/src/main/java/br/edu/enron/service/ContactAnalyzer.java
