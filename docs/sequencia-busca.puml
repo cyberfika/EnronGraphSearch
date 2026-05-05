@@ -1,0 +1,72 @@
+@startuml Sequencia_Busca
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title DFS and BFS Search Sequence
+
+participant "Main" as M
+participant "DepthFirstSearch\n/ BreadthFirstSearch" as S
+participant "ContactGraph" as G
+participant "PathResult" as PR
+
+== DFS ==
+
+M -> S : search(graph, originEmail, destinationEmail)
+S -> G : findVertex(originEmail)
+G --> S : Optional<Vertex> source
+S -> G : findVertex(destinationEmail)
+G --> S : Optional<Vertex> destination
+
+S -> S : initialise stack / visited set / predecessor map
+S -> S : push source onto stack
+
+loop until stack empty or destination found
+    S -> S : pop current vertex
+    alt current already visited
+        S -> S : skip
+    else not visited
+        S -> S : mark current as visited
+        alt current == destination
+            S -> S : reconstructPath(predecessor, source, destination)
+            S -> PR : new PathResult(vertexList)
+            PR --> S : pathResult
+            S --> M : pathResult
+        else
+            S -> G : getOutEdges(current)
+            G --> S : List<Edge>
+            loop for each edge
+                S -> S : if neighbour not visited → push onto stack, record predecessor
+            end
+        end
+    end
+end
+
+alt destination not reached
+    S -> PR : new PathResult(emptyList)
+    PR --> S : pathResult (empty)
+    S --> M : pathResult (empty)
+end
+
+== BFS (same interface, queue instead of stack) ==
+
+M -> S : search(graph, originEmail, destinationEmail)
+S -> S : initialise queue / visited set / predecessor map
+S -> S : enqueue source, mark visited
+
+loop until queue empty or destination found
+    S -> S : dequeue current
+    alt current == destination
+        S -> S : reconstructPath(predecessor, source, destination)
+        S -> PR : new PathResult(vertexList)
+        S --> M : pathResult
+    else
+        S -> G : getOutEdges(current)
+        G --> S : List<Edge>
+        loop for each unvisited neighbour
+            S -> S : enqueue neighbour, mark visited, record predecessor
+        end
+    end
+end
+
+@enduml

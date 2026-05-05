@@ -1,0 +1,52 @@
+@startuml Sequencia_Construcao_Grafo
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title Graph Construction Sequence
+
+actor User
+participant "Main" as M
+participant "EnronDatasetReader" as R
+participant "EmailParser" as P
+participant "EmailMessage" as EM
+participant "ContactGraph" as G
+
+User -> M : main(args)
+M -> R : buildGraph(datasetRoot)
+
+loop for each user directory
+    R -> R : listEmailFiles(sent, _sent_mail)
+    R -> R : deduplicate by SHA-256 hash
+
+    loop for each unique file
+        R -> P : parse(rawContent)
+        P -> P : read header block until blank line
+        P -> P : extract From: and To:
+        P -> P : normalize addresses
+        P -> EM : new EmailMessage(sender, recipients)
+        EM --> P : emailMessage
+        P --> R : emailMessage
+
+        alt emailMessage.hasValidData()
+            loop for each recipient
+                R -> G : addEdge(sender, recipient)
+                alt edge already exists
+                    G -> G : edge.incrementWeight()
+                else new edge
+                    G -> G : addVertex(sender)
+                    G -> G : addVertex(recipient)
+                    G -> G : adjacency.put(new Edge)
+                end
+            end
+        end
+    end
+end
+
+R -> R : printReport()
+R --> M : contactGraph
+
+M -> R : saveToCache(graph, graph.bin)
+M -> M : runAllQueries(graph)
+
+@enduml

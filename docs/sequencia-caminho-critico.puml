@@ -1,0 +1,57 @@
+@startuml Sequencia_Caminho_Critico
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title Critical Path Sequence (Adapted Dijkstra)
+
+participant "Main" as M
+participant "CriticalPathService" as C
+participant "ContactGraph" as G
+participant "PriorityQueue" as PQ
+participant "PathResult" as PR
+
+M -> C : computeCriticalPath(graph, originEmail, destinationEmail)
+C -> G : findVertex(originEmail)
+G --> C : source
+C -> G : findVertex(destinationEmail)
+G --> C : destination
+
+C -> C : initialise dist map (all = ∞, source = 0)
+C -> C : initialise predecessor map
+C -> C : initialise settled set
+C -> PQ : offer(source, cost=0)
+
+loop until PQ empty or destination settled
+    C -> PQ : poll() → VertexEntry(current, cost)
+    alt current already settled
+        C -> C : skip (stale entry)
+    else
+        C -> C : settled.add(current)
+        alt current == destination
+            C -> C : break — shortest path found
+        else
+            C -> G : getOutEdges(current)
+            G --> C : List<Edge>
+            loop for each edge
+                C -> C : newCost = dist[current] + edge.getInverseCost()\n        (inverseCost = 1.0 / weight)
+                alt newCost < dist[neighbour]
+                    C -> C : dist[neighbour] = newCost
+                    C -> C : predecessor[neighbour] = current
+                    C -> PQ : offer(neighbour, newCost)
+                end
+            end
+        end
+    end
+end
+
+C -> C : reconstructPath(predecessor, source, destination)
+C -> C : computeAccumulatedDependency(graph, path)\n    (sum of original edge weights)
+
+C -> PR : new PathResult(path, totalInverseCost, accumulatedDependency)
+PR --> C : pathResult
+C --> M : pathResult
+
+M -> M : print path, inverse cost, accumulated dependency
+
+@enduml

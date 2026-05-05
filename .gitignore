@@ -30,11 +30,8 @@ bin/
 .DS_Store
 
 
-docs/
-docs/*
-
-data
-data/*
+/data/
+/data/*
 *.gz
 *.tar.gz
 
