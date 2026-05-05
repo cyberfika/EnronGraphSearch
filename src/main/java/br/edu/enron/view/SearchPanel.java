@@ -1,5 +1,6 @@
 package br.edu.enron.view;
 
+import br.edu.enron.design.DesignSystem;
 import br.edu.enron.graph.ContactGraph;
 import br.edu.enron.model.DegreeResult;
 import br.edu.enron.model.Edge;
@@ -10,6 +11,7 @@ import br.edu.enron.service.ContactAnalyzer;
 import br.edu.enron.service.CriticalPathService;
 import br.edu.enron.service.DepthFirstSearch;
 import br.edu.enron.service.DistanceCalculator;
+import br.edu.enron.util.FontManager;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -19,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,30 +38,30 @@ import java.util.List;
  */
 public class SearchPanel extends JFrame {
 
-    // ── Color palette ─────────────────────────────────────────────────────────
-    private static final Color BG         = new Color(13,  21,  32);
-    private static final Color SIDEBAR_BG = new Color(10,  17,  27);
-    private static final Color CARD_BG    = new Color(18,  30,  46);
-    private static final Color TOPBAR_BG  = new Color( 8,  15,  25);
-    private static final Color STATUS_BG  = new Color( 5,  10,  17);
-    private static final Color ACCENT     = new Color(212, 170,  37);
-    private static final Color BORDER_CLR = new Color(24,  38,  56);
-    private static final Color TEXT_PRI   = new Color(220, 228, 240);
-    private static final Color TEXT_SEC   = new Color( 90, 112, 138);
-    private static final Color TEXT_MUT   = new Color( 45,  60,  78);
-    private static final Color GREEN_OK   = new Color( 38, 185,  88);
-    private static final Color TAG_BG     = new Color( 20,  35,  55);
-    private static final Color ROW_HOVER  = new Color( 22,  36,  54);
+    // ── Color palette (dynamically obtained from DesignSystem) ────────────────
+    private static Color BG() { return DesignSystem.bg(); }
+    private static Color SIDEBAR_BG() { return DesignSystem.bg(); }
+    private static Color CARD_BG() { return DesignSystem.surface(); }
+    private static Color TOPBAR_BG() { return DesignSystem.bg(); }
+    private static Color STATUS_BG() { return DesignSystem.bg(); }
+    private static Color ACCENT() { return DesignSystem.accent(); }
+    private static Color BORDER_CLR() { return DesignSystem.rule(); }
+    private static Color TEXT_PRI() { return DesignSystem.ink(); }
+    private static Color TEXT_SEC() { return DesignSystem.ink2(); }
+    private static Color TEXT_MUT() { return DesignSystem.muted(); }
+    private static Color GREEN_OK() { return DesignSystem.accent(); }
+    private static Color TAG_BG() { return DesignSystem.surface2(); }
+    private static Color ROW_HOVER() { return DesignSystem.bg2(); }
 
     // ── Fonts ─────────────────────────────────────────────────────────────────
-    private static final Font MONO_MD  = new Font(Font.MONOSPACED, Font.PLAIN, 12);
-    private static final Font MONO_SM  = new Font(Font.MONOSPACED, Font.PLAIN, 11);
-    private static final Font MONO_XS  = new Font(Font.MONOSPACED, Font.PLAIN, 10);
-    private static final Font SANS_BD  = new Font(Font.SANS_SERIF, Font.BOLD,  12);
-    private static final Font SERIF_28 = new Font(Font.SERIF,      Font.BOLD,  28);
-    private static final Font SERIF_IT = new Font(Font.SERIF,      Font.BOLD | Font.ITALIC, 28);
-    private static final Font NUM_XL   = new Font(Font.SANS_SERIF, Font.BOLD,  34);
-    private static final Font NUM_MD   = new Font(Font.SANS_SERIF, Font.BOLD,  16);
+    private static final Font MONO_MD  = FontManager.getMonospacedFont(12);
+    private static final Font MONO_SM  = FontManager.getMonospacedFont(11);
+    private static final Font MONO_XS  = FontManager.getMonospacedFont(10);
+    private static final Font SANS_BD  = FontManager.getSansSerifBoldFont(12);
+    private static final Font SERIF_28 = FontManager.getSerifBoldFont(28);
+    private static final Font SERIF_IT = FontManager.getSerifBoldItalicFont(28);
+    private static final Font NUM_XL   = FontManager.getSansSerifBoldFont(34);
+    private static final Font NUM_MD   = FontManager.getSansSerifBoldFont(16);
 
     // ── Services ──────────────────────────────────────────────────────────────
     private final ContactGraph        graph;
@@ -73,6 +76,7 @@ public class SearchPanel extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel     mainCards;
     private JButton          activeTabBtn;
+    private TweaksPanel      tweaksPanel;
 
     // ── Status bar labels ─────────────────────────────────────────────────────
     private final JLabel statusLeft;
@@ -113,16 +117,17 @@ public class SearchPanel extends JFrame {
         this.density       = computeDensity();
 
         this.mainCards = new JPanel(cardLayout);
-        mainCards.setBackground(BG);
+        mainCards.setBackground(BG());
 
         this.statusLeft = lbl(
             "ANALISADOR · ONLINE · JVM " + jvmShortVersion()
             + " · GRAFO " + graph.vertexCount() + "/" + graph.edgeCount()
             + " · PAINEL · VISÃO GERAL",
-            MONO_XS, TEXT_SEC);
-        this.statusRight = lbl(currentTime(), MONO_XS, TEXT_MUT);
+            MONO_XS, TEXT_SEC());
+        this.statusRight = lbl(currentTime(), MONO_XS, TEXT_MUT());
 
         buildFrame();
+        initTweaksPanel();
         startClock();
 
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -131,13 +136,34 @@ public class SearchPanel extends JFrame {
         setVisible(true);
     }
 
+    private void initTweaksPanel() {
+        tweaksPanel = new TweaksPanel(this);
+        tweaksPanel.setThemeChangeListener(() -> {
+            // Refresh the entire UI when theme changes
+            refreshTheme();
+        });
+    }
+
+    private void refreshTheme() {
+        // Rebuild the entire UI to reflect theme change
+        SwingUtilities.invokeLater(() -> {
+            // Clear current content
+            getContentPane().removeAll();
+            // Rebuild frame with new theme colors
+            buildFrame();
+            // Refresh layout and repaint
+            revalidate();
+            repaint();
+        });
+    }
+
     // =========================================================================
     // Frame skeleton
     // =========================================================================
 
     private void buildFrame() {
         JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(BG);
+        root.setBackground(BG());
         root.add(buildTopbar(),    BorderLayout.NORTH);
         root.add(buildSidebar(),   BorderLayout.WEST);
         root.add(buildMainArea(),  BorderLayout.CENTER);
@@ -151,15 +177,15 @@ public class SearchPanel extends JFrame {
 
     private JPanel buildTopbar() {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(TOPBAR_BG);
+        bar.setBackground(TOPBAR_BG());
         bar.setPreferredSize(new Dimension(0, 44));
-        bar.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+        bar.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR()));
 
         // Brand
         JPanel brand = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
         brand.setOpaque(false);
-        brand.add(lbl("⬡", new Font(Font.SANS_SERIF, Font.BOLD, 16), ACCENT));
-        brand.add(lbl("GRAPH·SEARCH", MONO_MD, TEXT_PRI));
+        brand.add(lbl("⬡", new Font(Font.SANS_SERIF, Font.BOLD, 16), ACCENT()));
+        brand.add(lbl("GRAPH·SEARCH", MONO_MD, TEXT_PRI()));
 
         // Tabs
         JPanel tabs = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -178,9 +204,39 @@ public class SearchPanel extends JFrame {
         }
 
         // Right
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 0));
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
-        right.add(lbl("ANALISADOR DE CONTATOS · ENRON", MONO_XS, TEXT_MUT));
+
+        JButton tweaksBtn = new JButton("⚙") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setColor(getBackground());
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
+        tweaksBtn.setFont(FontManager.getSansSerifFont(14));
+        tweaksBtn.setForeground(TEXT_SEC());
+        tweaksBtn.setBackground(TOPBAR_BG());
+        tweaksBtn.setOpaque(true);
+        tweaksBtn.setContentAreaFilled(false);
+        tweaksBtn.setBorderPainted(false);
+        tweaksBtn.setFocusPainted(false);
+        tweaksBtn.setPreferredSize(new Dimension(44, 44));
+        tweaksBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        tweaksBtn.addActionListener(e -> {
+            if (tweaksPanel != null) {
+                tweaksPanel.setVisible(!tweaksPanel.isVisible());
+            }
+        });
+        tweaksBtn.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { tweaksBtn.setForeground(TEXT_PRI()); }
+            @Override public void mouseExited(MouseEvent e)  { tweaksBtn.setForeground(TEXT_SEC()); }
+        });
+
+        right.add(tweaksBtn);
+        right.add(lbl("ANALISADOR DE CONTATOS · ENRON", MONO_XS, TEXT_MUT()));
 
         bar.add(brand, BorderLayout.WEST);
         bar.add(tabs,  BorderLayout.CENTER);
@@ -189,12 +245,21 @@ public class SearchPanel extends JFrame {
     }
 
     private JButton tabButton(String card, String label) {
-        JButton btn = new JButton(label);
+        JButton btn = new JButton(label) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                // Force custom painting to avoid Look & Feel interference
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setColor(getBackground());
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                super.paintComponent(g);
+            }
+        };
         btn.setFont(MONO_SM);
-        btn.setForeground(TEXT_SEC);
-        btn.setBackground(TOPBAR_BG);
+        btn.setForeground(TEXT_SEC());
+        btn.setBackground(TOPBAR_BG());
         btn.setOpaque(true);
-        btn.setContentAreaFilled(true);
+        btn.setContentAreaFilled(false);  // Disable default content fill
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setMargin(new Insets(0, 20, 0, 20));
@@ -212,20 +277,36 @@ public class SearchPanel extends JFrame {
                 + " · PAINEL · " + tabName.toUpperCase());
         });
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { if (btn != activeTabBtn) btn.setForeground(TEXT_PRI); }
-            @Override public void mouseExited(MouseEvent e)  { if (btn != activeTabBtn) btn.setForeground(TEXT_SEC); }
+            @Override public void mouseEntered(MouseEvent e) { if (btn != activeTabBtn) btn.setForeground(TEXT_PRI()); }
+            @Override public void mouseExited(MouseEvent e)  { if (btn != activeTabBtn) btn.setForeground(TEXT_SEC()); }
         });
         return btn;
     }
 
     private void activateTab(JButton btn) {
-        btn.setForeground(TEXT_PRI);
-        btn.setBorder(new MatteBorder(0, 0, 2, 0, ACCENT));
+        btn.setForeground(TEXT_PRI());
+        btn.setBackground(TOPBAR_BG());  // Keep dark background
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(false);  // Let custom paint handle it
+        // Custom border with explicit accent color to ensure consistency across platforms
+        btn.setBorder(new MatteBorder(0, 0, 3, 0, ACCENT()) {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                // Force accent color rendering
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setColor(ACCENT());
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.fillRect(x, y + height - 3, width, 3);
+            }
+        });
         btn.setBorderPainted(true);
     }
 
     private void deactivateTab(JButton btn) {
-        btn.setForeground(TEXT_SEC);
+        btn.setForeground(TEXT_SEC());
+        btn.setBackground(TOPBAR_BG());  // Keep dark background
+        btn.setOpaque(true);
+        btn.setContentAreaFilled(false);  // Let custom paint handle it
         btn.setBorderPainted(false);
     }
 
@@ -235,14 +316,14 @@ public class SearchPanel extends JFrame {
 
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout());
-        sidebar.setBackground(SIDEBAR_BG);
+        sidebar.setBackground(SIDEBAR_BG());
         sidebar.setPreferredSize(new Dimension(264, 0));
-        sidebar.setBorder(new MatteBorder(0, 0, 0, 1, BORDER_CLR));
+        sidebar.setBorder(new MatteBorder(0, 0, 0, 1, BORDER_CLR()));
 
         // Fixed upper sections
         JPanel top = new JPanel();
         top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
-        top.setBackground(SIDEBAR_BG);
+        top.setBackground(SIDEBAR_BG());
         top.add(sideSection("FONTE", "CORPUS"));
         top.add(datasetCard());
         top.add(sideSection("RESUMO", "LIVE"));
@@ -259,8 +340,8 @@ public class SearchPanel extends JFrame {
         p.setBackground(new Color(7, 13, 21));
         p.setBorder(new EmptyBorder(6, 10, 6, 10));
         p.setMaximumSize(new Dimension(264, 26));
-        p.add(lbl(left,  MONO_XS, TEXT_MUT), BorderLayout.WEST);
-        p.add(lbl(right, MONO_XS, TEXT_MUT), BorderLayout.EAST);
+        p.add(lbl(left,  MONO_XS, TEXT_MUT()), BorderLayout.WEST);
+        p.add(lbl(right, MONO_XS, TEXT_MUT()), BorderLayout.EAST);
         return p;
     }
 
@@ -273,12 +354,12 @@ public class SearchPanel extends JFrame {
 
         JPanel nameRow = new JPanel(new BorderLayout());
         nameRow.setOpaque(false);
-        nameRow.add(lbl("enron-public.maildir", MONO_SM, TEXT_PRI), BorderLayout.WEST);
-        nameRow.add(badge("ATIVO", GREEN_OK),                        BorderLayout.EAST);
+        nameRow.add(lbl("enron-public.maildir", MONO_SM, TEXT_PRI()), BorderLayout.WEST);
+        nameRow.add(badge("ATIVO", GREEN_OK()),                        BorderLayout.EAST);
 
         JLabel sub = lbl(
             "grafo construído · " + graph.vertexCount() + " vértices · " + graph.edgeCount() + " arestas",
-            MONO_XS, TEXT_MUT);
+            MONO_XS, TEXT_MUT());
 
         p.add(nameRow);
         p.add(Box.createVerticalStrut(4));
@@ -299,8 +380,8 @@ public class SearchPanel extends JFrame {
             {"Densidade", String.format("%.2f %%", density)}
         };
         for (String[] row : rows) {
-            p.add(lbl(row[0], MONO_SM, TEXT_MUT));
-            JLabel val = lbl(row[1], MONO_SM, TEXT_PRI);
+            p.add(lbl(row[0], MONO_SM, TEXT_MUT()));
+            JLabel val = lbl(row[1], MONO_SM, TEXT_PRI());
             val.setHorizontalAlignment(SwingConstants.RIGHT);
             p.add(val);
         }
@@ -310,7 +391,7 @@ public class SearchPanel extends JFrame {
     private JScrollPane buildDirectory() {
         JPanel list = new JPanel();
         list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.setBackground(SIDEBAR_BG);
+        list.setBackground(SIDEBAR_BG());
 
         // Sort owners by out-degree descending
         List<DegreeResult> sorted = new ArrayList<>();
@@ -327,8 +408,8 @@ public class SearchPanel extends JFrame {
 
         JScrollPane scroll = new JScrollPane(list);
         scroll.setBorder(null);
-        scroll.setBackground(SIDEBAR_BG);
-        scroll.getViewport().setBackground(SIDEBAR_BG);
+        scroll.setBackground(SIDEBAR_BG());
+        scroll.getViewport().setBackground(SIDEBAR_BG());
         styleScrollBar(scroll.getVerticalScrollBar());
         return scroll;
     }
@@ -337,7 +418,7 @@ public class SearchPanel extends JFrame {
         String user = email.contains("@") ? email.split("@")[0] : email;
 
         JPanel row = new JPanel(new BorderLayout(4, 0));
-        row.setBackground(SIDEBAR_BG);
+        row.setBackground(SIDEBAR_BG());
         row.setBorder(BorderFactory.createCompoundBorder(
             new MatteBorder(0, 0, 1, 0, new Color(15, 24, 37)),
             new EmptyBorder(6, 10, 6, 10)
@@ -345,16 +426,16 @@ public class SearchPanel extends JFrame {
         row.setMaximumSize(new Dimension(264, 34));
         row.setPreferredSize(new Dimension(0, 34));
 
-        JLabel nameLbl   = lbl(user, MONO_XS, TEXT_SEC);
-        JLabel degreeLbl = lbl(String.valueOf(degree), MONO_XS, ACCENT);
+        JLabel nameLbl   = lbl(user, MONO_XS, TEXT_SEC());
+        JLabel degreeLbl = lbl(String.valueOf(degree), MONO_XS, ACCENT());
         degreeLbl.setHorizontalAlignment(SwingConstants.RIGHT);
 
         row.add(nameLbl,   BorderLayout.CENTER);
         row.add(degreeLbl, BorderLayout.EAST);
 
         row.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { row.setBackground(ROW_HOVER); nameLbl.setForeground(TEXT_PRI); }
-            @Override public void mouseExited(MouseEvent e)  { row.setBackground(SIDEBAR_BG); nameLbl.setForeground(TEXT_SEC); }
+            @Override public void mouseEntered(MouseEvent e) { row.setBackground(ROW_HOVER()); nameLbl.setForeground(TEXT_PRI()); }
+            @Override public void mouseExited(MouseEvent e)  { row.setBackground(SIDEBAR_BG()); nameLbl.setForeground(TEXT_SEC()); }
         });
         return row;
     }
@@ -376,17 +457,17 @@ public class SearchPanel extends JFrame {
 
     private JPanel overviewPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG);
+        panel.setBackground(BG());
         panel.add(sectionHeader("§01", "VISÃO GERAL", "GRAFO DIRECIONADO · PONDERADO · ROTULADO"),
                   BorderLayout.NORTH);
 
         JPanel body = new JPanel(new BorderLayout(0, 16));
-        body.setBackground(BG);
+        body.setBackground(BG());
         body.setBorder(new EmptyBorder(20, 24, 20, 24));
         body.add(heroBlock(),     BorderLayout.NORTH);
 
         JPanel lower = new JPanel(new BorderLayout(0, 14));
-        lower.setBackground(BG);
+        lower.setBackground(BG());
         lower.add(statCards(),       BorderLayout.NORTH);
         lower.add(leaderboard(),     BorderLayout.CENTER);
 
@@ -394,8 +475,8 @@ public class SearchPanel extends JFrame {
 
         JScrollPane scroll = new JScrollPane(body);
         scroll.setBorder(null);
-        scroll.setBackground(BG);
-        scroll.getViewport().setBackground(BG);
+        scroll.setBackground(BG());
+        scroll.getViewport().setBackground(BG());
         styleScrollBar(scroll.getVerticalScrollBar());
         panel.add(scroll, BorderLayout.CENTER);
         return panel;
@@ -403,15 +484,15 @@ public class SearchPanel extends JFrame {
 
     private JPanel heroBlock() {
         JPanel p = new JPanel(new BorderLayout(0, 8));
-        p.setBackground(BG);
+        p.setBackground(BG());
         p.setBorder(new EmptyBorder(0, 0, 14, 0));
 
         // Composite title: normal + italic amber + normal
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titleRow.setOpaque(false);
-        titleRow.add(lbl("A topologia ", SERIF_28, TEXT_PRI));
-        titleRow.add(lbl("de uma corporação", SERIF_IT, ACCENT));
-        titleRow.add(lbl(", em arestas.", SERIF_28, TEXT_PRI));
+        titleRow.add(lbl("A topologia ", SERIF_28, TEXT_PRI()));
+        titleRow.add(lbl("de uma corporação", SERIF_IT, ACCENT()));
+        titleRow.add(lbl(", em arestas.", SERIF_28, TEXT_PRI()));
 
         JLabel body = new JLabel(
             "<html><body style='width:520px'>"
@@ -420,7 +501,7 @@ public class SearchPanel extends JFrame {
             + "BFS e DFS — todos com tratamento explícito de ciclos."
             + "</body></html>");
         body.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        body.setForeground(TEXT_SEC);
+        body.setForeground(TEXT_SEC());
 
         // Property tags
         JPanel tags = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -442,11 +523,11 @@ public class SearchPanel extends JFrame {
     private JLabel propTag(String text) {
         JLabel l = new JLabel(text);
         l.setFont(MONO_XS);
-        l.setForeground(TEXT_SEC);
+        l.setForeground(TEXT_SEC());
         l.setOpaque(true);
-        l.setBackground(TAG_BG);
+        l.setBackground(TAG_BG());
         l.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_CLR, 1),
+            BorderFactory.createLineBorder(BORDER_CLR(), 1),
             new EmptyBorder(4, 10, 4, 10)
         ));
         return l;
@@ -454,31 +535,31 @@ public class SearchPanel extends JFrame {
 
     private JPanel statCards() {
         JPanel p = new JPanel(new GridLayout(1, 4, 12, 0));
-        p.setBackground(BG);
+        p.setBackground(BG());
         p.setPreferredSize(new Dimension(0, 120));
 
         p.add(statCard("VÉRTICES",            formatInt(graph.vertexCount()),
-                       "INDIVÍDUOS",          "getNumeroVertices()", TEXT_PRI));
+                       "INDIVÍDUOS",          "getNumeroVertices()", TEXT_PRI()));
         p.add(statCard("ARESTAS",             formatInt(graph.edgeCount()),
-                       "RELAÇÕES",            "getNumeroArestas()", TEXT_PRI));
+                       "RELAÇÕES",            "getNumeroArestas()", TEXT_PRI()));
         p.add(statCard("MENSAGENS (Σ PESOS)", formatInt(totalMessages),
-                       "",                    "soma das frequências", TEXT_PRI));
+                       "",                    "soma das frequências", TEXT_PRI()));
         p.add(statCard("DENSIDADE",           String.format("%.2f", density),
                        "%",                   "grau médio · " + String.format("%.2f",
                             graph.vertexCount() > 1 ? (double) graph.edgeCount() / graph.vertexCount() : 0),
-                       ACCENT));
+                       ACCENT()));
         return p;
     }
 
     private JPanel statCard(String label, String value, String unit, String sub, Color valueColor) {
         JPanel card = new JPanel(new BorderLayout(0, 6));
-        card.setBackground(CARD_BG);
+        card.setBackground(CARD_BG());
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_CLR, 1),
+            BorderFactory.createLineBorder(BORDER_CLR(), 1),
             new EmptyBorder(14, 18, 14, 18)
         ));
 
-        JLabel topLbl = lbl(label, MONO_XS, TEXT_MUT);
+        JLabel topLbl = lbl(label, MONO_XS, TEXT_MUT());
 
         JPanel valRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         valRow.setOpaque(false);
@@ -489,7 +570,7 @@ public class SearchPanel extends JFrame {
             valRow.add(unitLbl);
         }
 
-        JLabel subLbl = lbl(sub, MONO_XS, TEXT_MUT);
+        JLabel subLbl = lbl(sub, MONO_XS, TEXT_MUT());
 
         card.add(topLbl, BorderLayout.NORTH);
         card.add(valRow, BorderLayout.CENTER);
@@ -499,7 +580,7 @@ public class SearchPanel extends JFrame {
 
     private JPanel leaderboard() {
         JPanel p = new JPanel(new GridLayout(1, 2, 14, 0));
-        p.setBackground(BG);
+        p.setBackground(BG());
 
         int maxOut = top20Out.isEmpty() ? 1 : top20Out.get(0).getDegree();
         int maxIn  = top20In.isEmpty()  ? 1 : top20In.get(0).getDegree();
@@ -512,22 +593,22 @@ public class SearchPanel extends JFrame {
     private JPanel leaderboardColumn(String title, String subtitle,
                                      List<DegreeResult> entries, int maxDeg) {
         JPanel outer = new JPanel(new BorderLayout());
-        outer.setBackground(CARD_BG);
-        outer.setBorder(BorderFactory.createLineBorder(BORDER_CLR, 1));
+        outer.setBackground(CARD_BG());
+        outer.setBorder(BorderFactory.createLineBorder(BORDER_CLR(), 1));
 
         // Header
         JPanel hdr = new JPanel(new BorderLayout());
         hdr.setBackground(new Color(13, 22, 34));
         hdr.setBorder(new EmptyBorder(10, 14, 10, 14));
-        hdr.add(lbl(title,    MONO_SM, TEXT_PRI), BorderLayout.WEST);
-        JLabel sub = lbl(subtitle, MONO_XS, TEXT_MUT);
+        hdr.add(lbl(title,    MONO_SM, TEXT_PRI()), BorderLayout.WEST);
+        JLabel sub = lbl(subtitle, MONO_XS, TEXT_MUT());
         sub.setHorizontalAlignment(SwingConstants.RIGHT);
         hdr.add(sub, BorderLayout.EAST);
 
         // Rows
         JPanel rows = new JPanel();
         rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
-        rows.setBackground(CARD_BG);
+        rows.setBackground(CARD_BG());
 
         for (int i = 0; i < entries.size(); i++) {
             rows.add(lbRow(i + 1, entries.get(i), maxDeg));
@@ -536,8 +617,8 @@ public class SearchPanel extends JFrame {
 
         JScrollPane scroll = new JScrollPane(rows);
         scroll.setBorder(null);
-        scroll.setBackground(CARD_BG);
-        scroll.getViewport().setBackground(CARD_BG);
+        scroll.setBackground(CARD_BG());
+        scroll.getViewport().setBackground(CARD_BG());
         styleScrollBar(scroll.getVerticalScrollBar());
 
         outer.add(hdr,    BorderLayout.NORTH);
@@ -547,7 +628,7 @@ public class SearchPanel extends JFrame {
 
     private JPanel lbRow(int rank, DegreeResult dr, int maxDeg) {
         JPanel row = new JPanel(new GridBagLayout());
-        row.setBackground(CARD_BG);
+        row.setBackground(CARD_BG());
         row.setBorder(BorderFactory.createCompoundBorder(
             new MatteBorder(0, 0, 1, 0, new Color(14, 24, 37)),
             new EmptyBorder(7, 14, 7, 14)
@@ -559,14 +640,14 @@ public class SearchPanel extends JFrame {
 
         // Rank
         gc.gridx = 0; gc.gridy = 0; gc.weightx = 0;
-        row.add(lbl(String.format("%02d", rank), MONO_XS, TEXT_MUT), gc);
+        row.add(lbl(String.format("%02d", rank), MONO_XS, TEXT_MUT()), gc);
 
         // Email column (two lines: email + sub)
         gc.gridx = 1; gc.weightx = 1; gc.fill = GridBagConstraints.HORIZONTAL;
         JPanel emailCol = new JPanel();
         emailCol.setLayout(new BoxLayout(emailCol, BoxLayout.Y_AXIS));
         emailCol.setOpaque(false);
-        JLabel emailLbl = lbl(dr.getEmail(), MONO_SM, TEXT_PRI);
+        JLabel emailLbl = lbl(dr.getEmail(), MONO_SM, TEXT_PRI());
         emailLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         emailCol.add(emailLbl);
         row.add(emailCol, gc);
@@ -577,8 +658,8 @@ public class SearchPanel extends JFrame {
         row.add(degreeBar(dr.getDegree(), maxDeg), gc);
 
         // Hover
-        Color normal = CARD_BG;
-        Color hover  = ROW_HOVER;
+        Color normal = CARD_BG();
+        Color hover  = ROW_HOVER();
         row.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) { row.setBackground(hover); }
             @Override public void mouseExited(MouseEvent e)  { row.setBackground(normal); }
@@ -594,7 +675,7 @@ public class SearchPanel extends JFrame {
         JPanel p = new JPanel(new BorderLayout(6, 0));
         p.setOpaque(false);
 
-        JLabel numLbl = lbl(String.valueOf(degree), MONO_SM, ACCENT);
+        JLabel numLbl = lbl(String.valueOf(degree), MONO_SM, ACCENT());
         numLbl.setPreferredSize(new Dimension(28, 14));
         numLbl.setHorizontalAlignment(SwingConstants.RIGHT);
 
@@ -604,7 +685,7 @@ public class SearchPanel extends JFrame {
                 int y = (getHeight() - 4) / 2;
                 g.setColor(new Color(28, 44, 64));
                 g.fillRect(0, y, BAR_W, 4);
-                g.setColor(ACCENT);
+                g.setColor(ACCENT());
                 g.fillRect(0, y, barFill, 4);
             }
         };
@@ -620,7 +701,7 @@ public class SearchPanel extends JFrame {
 
     private JPanel dfsBfsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG);
+        panel.setBackground(BG());
         panel.add(sectionHeader("§02", "DFS · BFS", "TRAVESSIA EM PROFUNDIDADE E LARGURA"),
                   BorderLayout.NORTH);
 
@@ -630,8 +711,8 @@ public class SearchPanel extends JFrame {
         resultDfs = resultArea();
 
         JPanel controls = queryGrid(
-            lbl("DE:",   MONO_SM, TEXT_SEC), fromComboDfs,
-            lbl("PARA:", MONO_SM, TEXT_SEC), toComboDfs
+            lbl("DE:",   MONO_SM, TEXT_SEC()), fromComboDfs,
+            lbl("PARA:", MONO_SM, TEXT_SEC()), toComboDfs
         );
         JPanel btnRow = btnRow(
             actionBtn("DFS",          new Color(38,  88, 158), e -> onDfs()),
@@ -648,7 +729,7 @@ public class SearchPanel extends JFrame {
 
     private JPanel distancePanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG);
+        panel.setBackground(BG());
         panel.add(sectionHeader("§03", "DISTÂNCIA D", "ALCANÇABILIDADE POR NÍVEL"),
                   BorderLayout.NORTH);
 
@@ -658,8 +739,8 @@ public class SearchPanel extends JFrame {
         resultDist = resultArea();
 
         JPanel controls = queryGrid(
-            lbl("DE:", MONO_SM, TEXT_SEC), fromComboDist,
-            lbl("D:",  MONO_SM, TEXT_SEC), distanceSpinner
+            lbl("DE:", MONO_SM, TEXT_SEC()), fromComboDist,
+            lbl("D:",  MONO_SM, TEXT_SEC()), distanceSpinner
         );
         JPanel btnRow = btnRow(
             actionBtn("Calcular Distância D", new Color(92, 44, 148), e -> onDistance())
@@ -674,7 +755,7 @@ public class SearchPanel extends JFrame {
 
     private JPanel critPathPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BG);
+        panel.setBackground(BG());
         panel.add(sectionHeader("§04", "CAMINHO CRÍTICO", "DIJKSTRA ADAPTADO · CUSTO = 1 / PESO"),
                   BorderLayout.NORTH);
 
@@ -684,8 +765,8 @@ public class SearchPanel extends JFrame {
         resultCrit = resultArea();
 
         JPanel controls = queryGrid(
-            lbl("DE:",   MONO_SM, TEXT_SEC), fromComboCrit,
-            lbl("PARA:", MONO_SM, TEXT_SEC), toComboCrit
+            lbl("DE:",   MONO_SM, TEXT_SEC()), fromComboCrit,
+            lbl("PARA:", MONO_SM, TEXT_SEC()), toComboCrit
         );
         JPanel btnRow = btnRow(
             actionBtn("Calcular Caminho Crítico", new Color(148, 40, 40), e -> onCriticalPath())
@@ -700,18 +781,18 @@ public class SearchPanel extends JFrame {
 
     private JPanel buildStatusbar() {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(STATUS_BG);
+        bar.setBackground(STATUS_BG());
         bar.setPreferredSize(new Dimension(0, 24));
-        bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_CLR));
+        bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_CLR()));
 
         JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 3));
         left.setOpaque(false);
-        left.add(lbl("■", MONO_XS, GREEN_OK));
+        left.add(lbl("■", MONO_XS, GREEN_OK()));
         left.add(statusLeft);
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 3));
         right.setOpaque(false);
-        right.add(lbl("BR.EDU.ENRON.APP.MAIN", MONO_XS, TEXT_MUT));
+        right.add(lbl("BR.EDU.ENRON.APP.MAIN", MONO_XS, TEXT_MUT()));
         right.add(statusRight);
 
         bar.add(left,  BorderLayout.WEST);
@@ -781,14 +862,14 @@ public class SearchPanel extends JFrame {
         JPanel p = new JPanel(new BorderLayout());
         p.setBackground(new Color(10, 18, 28));
         p.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+            new MatteBorder(0, 0, 1, 0, BORDER_CLR()),
             new EmptyBorder(9, 24, 9, 24)
         ));
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         row.setOpaque(false);
-        row.add(lbl(num + " ·", MONO_SM, ACCENT));
-        row.add(lbl(title,      MONO_SM, TEXT_PRI));
-        row.add(lbl("· " + sub, MONO_SM, TEXT_MUT));
+        row.add(lbl(num + " ·", MONO_SM, ACCENT()));
+        row.add(lbl(title,      MONO_SM, TEXT_PRI()));
+        row.add(lbl("· " + sub, MONO_SM, TEXT_MUT()));
         p.add(row, BorderLayout.WEST);
         return p;
     }
@@ -816,9 +897,9 @@ public class SearchPanel extends JFrame {
 
     private JPanel queryArea(JPanel controls, JPanel buttons) {
         JPanel p = new JPanel(new BorderLayout(0, 10));
-        p.setBackground(CARD_BG);
+        p.setBackground(CARD_BG());
         p.setBorder(BorderFactory.createCompoundBorder(
-            new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+            new MatteBorder(0, 0, 1, 0, BORDER_CLR()),
             new EmptyBorder(20, 24, 16, 24)
         ));
         p.add(controls, BorderLayout.CENTER);
@@ -836,7 +917,7 @@ public class SearchPanel extends JFrame {
     private JButton actionBtn(String label, Color bg, java.util.function.Consumer<ActionEvent> handler) {
         JButton btn = new JButton(label);
         btn.setFont(MONO_SM);
-        btn.setForeground(TEXT_PRI);
+        btn.setForeground(TEXT_PRI());
         btn.setBackground(bg);
         btn.setOpaque(true);
         btn.setContentAreaFilled(true);
@@ -859,14 +940,15 @@ public class SearchPanel extends JFrame {
         area.setFont(MONO_SM);
         area.setBackground(new Color(7, 12, 20));
         area.setForeground(new Color(0, 220, 110));
-        area.setCaretColor(ACCENT);
+        area.setCaretColor(ACCENT());
         area.setBorder(new EmptyBorder(14, 18, 14, 18));
+        area.setOpaque(true);  // Force opaque to override Look & Feel
         return area;
     }
 
     private JScrollPane resultScroll(JTextArea area) {
         JScrollPane scroll = new JScrollPane(area);
-        scroll.setBorder(new MatteBorder(0, 0, 0, 0, BORDER_CLR));
+        scroll.setBorder(new MatteBorder(0, 0, 0, 0, BORDER_CLR()));
         scroll.setBackground(new Color(7, 12, 20));
         scroll.getViewport().setBackground(new Color(7, 12, 20));
         styleScrollBar(scroll.getVerticalScrollBar());
@@ -875,19 +957,23 @@ public class SearchPanel extends JFrame {
 
     private void styleSpinner(JSpinner spinner) {
         spinner.setFont(MONO_MD);
-        spinner.setBackground(CARD_BG);
-        spinner.setForeground(TEXT_PRI);
+        spinner.setBackground(CARD_BG());
+        spinner.setForeground(TEXT_PRI());
+        spinner.setOpaque(true);
+
         if (spinner.getEditor() instanceof JSpinner.DefaultEditor de) {
-            de.getTextField().setBackground(CARD_BG);
-            de.getTextField().setForeground(TEXT_PRI);
-            de.getTextField().setFont(MONO_MD);
-            de.getTextField().setCaretColor(ACCENT);
+            JTextField textField = de.getTextField();
+            textField.setBackground(CARD_BG());
+            textField.setForeground(TEXT_PRI());
+            textField.setFont(MONO_MD);
+            textField.setCaretColor(ACCENT());
+            textField.setOpaque(true);  // Force opaque to override Look & Feel
         }
     }
 
     /** Styles a scroll bar to be thin and dark (matches the dark theme). */
     private void styleScrollBar(JScrollBar sb) {
-        sb.setBackground(SIDEBAR_BG);
+        sb.setBackground(SIDEBAR_BG());
         sb.setUI(new BasicScrollBarUI() {
             @Override protected void configureScrollBarColors() {
                 thumbColor = new Color(38, 58, 82);
@@ -919,10 +1005,9 @@ public class SearchPanel extends JFrame {
             model.addElement(email);
         }
 
+        // Standard JComboBox with custom dark theme styling
         JComboBox<String> combo = new JComboBox<>(model);
         combo.setFont(MONO_SM);
-        combo.setBackground(CARD_BG);
-        combo.setForeground(TEXT_PRI);
         combo.setPreferredSize(new Dimension(460, 28));
         combo.setMaximumRowCount(18);
 
@@ -930,16 +1015,22 @@ public class SearchPanel extends JFrame {
             @Override public Component getListCellRendererComponent(
                     JList<?> list, Object value, int index, boolean sel, boolean focus) {
                 super.getListCellRendererComponent(list, value, index, sel, focus);
+                setOpaque(true);
+
+                // Force list background to dark
+                list.setBackground(CARD_BG());
+                list.setForeground(TEXT_PRI());
+
                 String item = (String) value;
                 if (item != null && item.startsWith("──")) {
                     setFont(MONO_XS);
-                    setForeground(ACCENT);
-                    setBackground(new Color(10, 18, 30));
+                    setForeground(ACCENT());
+                    setBackground(CARD_BG());
                     setEnabled(false);
                 } else {
                     setFont(MONO_SM);
-                    setForeground(sel ? new Color(10, 18, 30) : TEXT_PRI);
-                    setBackground(sel ? ACCENT : CARD_BG);
+                    setForeground(sel ? CARD_BG() : TEXT_PRI());
+                    setBackground(sel ? ACCENT() : CARD_BG());
                 }
                 return this;
             }
