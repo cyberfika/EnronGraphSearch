@@ -1,0 +1,387 @@
+@startuml Enron_ContactGraph_Classes
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "br.edu.enron.model" {
+
+    class Vertex <<Serializable>> {
+        - email : String
+        + Vertex(email : String)
+        + getEmail() : String
+        + equals(obj : Object) : boolean
+        + hashCode() : int
+        + toString() : String
+    }
+
+    class Edge <<Serializable>> {
+        - origin : Vertex
+        - destination : Vertex
+        - weight : int
+        + Edge(origin : Vertex, destination : Vertex)
+        + getOrigin() : Vertex
+        + getDestination() : Vertex
+        + getWeight() : int
+        + incrementWeight() : void
+        + getInverseCost() : double
+        + equals(obj : Object) : boolean
+        + hashCode() : int
+        + toString() : String
+    }
+
+    class EmailMessage {
+        - sender : String
+        - recipients : List<String>
+        + EmailMessage(sender : String, recipients : List<String>)
+        + getSender() : String
+        + getRecipients() : List<String>
+        + hasValidData() : boolean
+        + toString() : String
+    }
+
+    class DegreeResult <<Comparable>> {
+        - email : String
+        - degree : int
+        + DegreeResult(email : String, degree : int)
+        + getEmail() : String
+        + getDegree() : int
+        + compareTo(other : DegreeResult) : int
+        + toString() : String
+    }
+
+    class PathResult {
+        - vertices : List<Vertex>
+        - totalCost : double
+        - accumulatedDependency : double
+        + PathResult(vertices : List<Vertex>)
+        + PathResult(vertices : List<Vertex>, totalCost : double, accDep : double)
+        + getVertices() : List<Vertex>
+        + getTotalCost() : double
+        + getAccumulatedDependency() : double
+        + exists() : boolean
+        + toString() : String
+    }
+}
+
+package "br.edu.enron.graph" {
+
+    class ContactGraph <<Serializable>> {
+        - vertexIndex : Map<String, Vertex>
+        - adjacency : Map<Vertex, Map<Vertex, Edge>>
+        - ownerEmails : Set<String>
+        + ContactGraph()
+        + addOwner(email : String) : void
+        + getOwnerEmails() : Set<String>
+        + addVertex(email : String) : Vertex
+        + addEdge(originEmail : String, destinationEmail : String) : void
+        + findVertex(email : String) : Optional<Vertex>
+        + containsVertex(email : String) : boolean
+        + getVertices() : Collection<Vertex>
+        + getEdges() : List<Edge>
+        + getOutEdges(vertex : Vertex) : List<Edge>
+        + getInEdges(vertex : Vertex) : List<Edge>
+        + vertexCount() : int
+        + edgeCount() : int
+        + outDegree(vertex : Vertex) : int
+        + inDegree(vertex : Vertex) : int
+    }
+}
+
+package "br.edu.enron.service" {
+
+    class ContactAnalyzer {
+        - graph : ContactGraph
+        + ContactAnalyzer(graph : ContactGraph)
+        + getVertexCount() : int
+        + getEdgeCount() : int
+        + getTop20OutDegree() : List<DegreeResult>
+        + getTop20InDegree() : List<DegreeResult>
+    }
+
+    class DepthFirstSearch {
+        + search(graph : ContactGraph, originEmail : String, destinationEmail : String) : PathResult
+    }
+
+    class BreadthFirstSearch {
+        + search(graph : ContactGraph, originEmail : String, destinationEmail : String) : PathResult
+    }
+
+    class DistanceCalculator {
+        + getVerticesAtDistance(graph : ContactGraph, originEmail : String, distance : int) : List<Vertex>
+    }
+
+    class CriticalPathService {
+        + computeCriticalPath(graph : ContactGraph, originEmail : String, destinationEmail : String) : PathResult
+    }
+}
+
+package "br.edu.enron.parser" {
+
+    class EmailParser {
+        + parse(rawContent : String) : EmailMessage
+    }
+
+    class EnronDatasetReader {
+        - parser : EmailParser
+        + buildGraph(datasetRoot : Path) : ContactGraph
+        + loadFromCache(cacheFile : Path) : ContactGraph
+        + saveToCache(graph : ContactGraph, cacheFile : Path) : void
+        + {static} cachePath(datasetRoot : Path) : Path
+    }
+}
+
+package "br.edu.enron.util" {
+
+    class EmailValidator <<utility>> {
+        + {static} normalize(email : String) : String
+        + {static} isValid(email : String) : boolean
+    }
+
+    class FontManager <<utility>> {
+        + {static} getMonospacedFont(size : int) : Font
+        + {static} getMonospacedBoldFont(size : int) : Font
+        + {static} getSansSerifFont(size : int) : Font
+        + {static} getSansSerifBoldFont(size : int) : Font
+        + {static} getSerifFont(size : int) : Font
+        + {static} getSerifBoldFont(size : int) : Font
+        + {static} getSerifBoldItalicFont(size : int) : Font
+        + {static} isMac() : boolean
+        + {static} isWindows() : boolean
+    }
+}
+
+package "br.edu.enron.design" {
+
+    class DesignSystem {
+        - {static} currentTheme : Theme
+        + {static} setTheme(theme : Theme) : void
+        + {static} getTheme() : Theme
+        + {static} applyToUIManager() : void
+        + {static} bg() : Color
+        + {static} bg2() : Color
+        + {static} surface() : Color
+        + {static} surface2() : Color
+        + {static} ink() : Color
+        + {static} ink2() : Color
+        + {static} muted() : Color
+        + {static} faint() : Color
+        + {static} rule() : Color
+        + {static} rule2() : Color
+        + {static} accent() : Color
+    }
+
+    enum Theme {
+        DARK
+        LIGHT
+    }
+
+    DesignSystem +-- Theme
+}
+
+package "br.edu.enron.view" {
+
+    class SearchPanel <<JFrame>> {
+        - graph : ContactGraph
+        - visualizer : GraphVisualizer
+        - cardLayout : CardLayout
+        - mainCards : JPanel
+        - activeTabBtn : JButton
+        - tweaksPanel : TweaksPanel
+        - statusBar : StatusBar
+        + SearchPanel(graph : ContactGraph)
+        - buildFrame() : void
+        - buildTopbar() : JPanel
+        - buildMainArea() : JPanel
+        - initTweaksPanel() : void
+        - refreshTheme() : void
+    }
+
+    class GraphVisualizer {
+        + display(graph : ContactGraph, title : String) : void
+        + displayTopN(graph : ContactGraph, title : String, n : int) : void
+        + displayWithPath(graph : ContactGraph, path : PathResult, title : String, label : String) : void
+        + displayEgoNetwork(graph : ContactGraph, centerEmail : String, hops : int, title : String) : void
+    }
+
+    class TweaksPanel <<JDialog>> {
+        - themeChangeListener : Runnable
+        + TweaksPanel(owner : Frame)
+        + setThemeChangeListener(listener : Runnable) : void
+    }
+}
+
+package "br.edu.enron.view.component" {
+
+    class SwingHelper <<utility>> {
+        + {static} MONO_MD : Font
+        + {static} MONO_SM : Font
+        + {static} MONO_XS : Font
+        + {static} SANS_BD : Font
+        + {static} SERIF_28 : Font
+        + {static} SERIF_IT : Font
+        + {static} NUM_XL : Font
+        + {static} NUM_MD : Font
+        + {static} lbl(text, font, color) : JLabel
+        + {static} badge(text, color) : JLabel
+        + {static} propTag(text) : JLabel
+        + {static} styleScrollBar(sb) : void
+        + {static} buildCombo(emails) : JComboBox<String>
+        + {static} selectLastReal(combo) : void
+        + {static} selectedEmail(combo) : String
+        + {static} styleSpinner(spinner) : void
+        + {static} resultArea() : JTextArea
+        + {static} resultScroll(area) : JScrollPane
+        + {static} prepend(area, text) : void
+        + {static} formatInt(n) : String
+    }
+
+    class PanelHeader <<JPanel>> {
+        + PanelHeader(eyebrow, titleNormal, titleAccent, titleEnd, subtitle, pills...)
+    }
+
+    class QueryRow <<JPanel>> {
+        + QueryRow()
+        + addComboCell(label, accent, combo, weight) : void
+        + addSpinnerCell(label, accent, spinner, weight) : void
+        + addAlgoToggle(label, options, defaultIdx, onSelect) : void
+        + addInfoCell(label, info) : void
+        + addActionButton(label, handler) : void
+    }
+
+    class Sidebar <<JPanel>> {
+        + Sidebar(graph : ContactGraph, totalMessages : int, density : double)
+    }
+
+    class StatusBar <<JPanel>> {
+        + StatusBar(graph : ContactGraph)
+        + setActivePanel(name : String) : void
+    }
+}
+
+package "br.edu.enron.view.panel" {
+
+    class OverviewPanel <<JPanel>> {
+        + OverviewPanel(graph, top20Out, top20In, totalMessages, density)
+    }
+
+    class DfsBfsPanel <<JPanel>> {
+        - graph : ContactGraph
+        - dfs : DepthFirstSearch
+        - bfs : BreadthFirstSearch
+        - visualizer : GraphVisualizer
+        - selectedAlgo : String
+        + DfsBfsPanel(graph : ContactGraph, visualizer : GraphVisualizer)
+    }
+
+    class DistancePanel <<JPanel>> {
+        - graph : ContactGraph
+        - distCalc : DistanceCalculator
+        - visualizer : GraphVisualizer
+        + DistancePanel(graph : ContactGraph, visualizer : GraphVisualizer)
+    }
+
+    class CriticalPathPanel <<JPanel>> {
+        - graph : ContactGraph
+        - critPath : CriticalPathService
+        - visualizer : GraphVisualizer
+        + CriticalPathPanel(graph : ContactGraph, visualizer : GraphVisualizer)
+    }
+}
+
+package "br.edu.enron.app" {
+
+    class Main {
+        + {static} main(args : String[]) : void
+        - {static} showWelcomeScreen() : StartupChoice
+        - {static} loadAndRun(datasetRoot : Path, rebuild : boolean) : void
+        - {static} runDemoMode() : void
+        - {static} runAllQueries(graph : ContactGraph) : void
+        - {static} forceDarkThemeOnUIManager() : void
+    }
+
+    class StartupChoice <<record>> {
+        cancelled : boolean
+        useDemo : boolean
+        path : String
+        rebuild : boolean
+    }
+
+    Main +-- StartupChoice
+}
+
+' --- Relationships ---
+
+Edge "1" --> "1" Vertex : origin
+Edge "1" --> "1" Vertex : destination
+
+ContactGraph "1" o-- "*" Vertex : contains
+ContactGraph "1" o-- "*" Edge   : contains
+
+PathResult "*" --> "*" Vertex : lists
+
+ContactAnalyzer  --> ContactGraph : uses
+DepthFirstSearch  --> ContactGraph : uses
+BreadthFirstSearch --> ContactGraph : uses
+DistanceCalculator --> ContactGraph : uses
+CriticalPathService --> ContactGraph : uses
+
+ContactAnalyzer  ..> DegreeResult : produces
+DepthFirstSearch  ..> PathResult  : produces
+BreadthFirstSearch ..> PathResult : produces
+CriticalPathService ..> PathResult : produces
+DistanceCalculator ..> Vertex     : produces
+
+EnronDatasetReader --> EmailParser  : uses
+EnronDatasetReader ..> EmailMessage : produces
+EnronDatasetReader ..> ContactGraph : builds
+
+EmailParser ..> EmailMessage : produces
+EmailParser ..> EmailValidator : uses
+
+SearchPanel --> GraphVisualizer : owns
+SearchPanel --> TweaksPanel     : owns
+SearchPanel --> Sidebar         : composes
+SearchPanel --> StatusBar       : composes
+SearchPanel --> OverviewPanel   : composes
+SearchPanel --> DfsBfsPanel     : composes
+SearchPanel --> DistancePanel   : composes
+SearchPanel --> CriticalPathPanel : composes
+SearchPanel --> ContactGraph    : reads
+
+TweaksPanel --> DesignSystem    : toggles theme
+
+DfsBfsPanel --> DepthFirstSearch  : uses
+DfsBfsPanel --> BreadthFirstSearch : uses
+DfsBfsPanel --> GraphVisualizer   : uses
+DfsBfsPanel --> PanelHeader       : composes
+DfsBfsPanel --> QueryRow          : composes
+
+DistancePanel --> DistanceCalculator : uses
+DistancePanel --> GraphVisualizer    : uses
+DistancePanel --> PanelHeader        : composes
+DistancePanel --> QueryRow           : composes
+
+CriticalPathPanel --> CriticalPathService : uses
+CriticalPathPanel --> GraphVisualizer     : uses
+CriticalPathPanel --> PanelHeader         : composes
+CriticalPathPanel --> QueryRow            : composes
+
+OverviewPanel --> PanelHeader : composes
+
+GraphVisualizer --> ContactGraph : reads
+GraphVisualizer --> PathResult   : reads
+
+SwingHelper ..> DesignSystem : reads colors
+SwingHelper ..> FontManager  : reads fonts
+PanelHeader ..> SwingHelper  : uses
+QueryRow    ..> SwingHelper  : uses
+Sidebar     ..> SwingHelper  : uses
+StatusBar   ..> SwingHelper  : uses
+
+Main --> EnronDatasetReader  : uses
+Main --> SearchPanel         : creates
+Main --> DesignSystem        : configures
+
+@enduml

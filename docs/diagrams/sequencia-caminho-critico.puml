@@ -1,0 +1,68 @@
+@startuml Sequencia_Caminho_Critico
+
+skinparam sequenceArrowThickness 2
+skinparam responseMessageBelowArrow true
+
+title Critical Path Sequence (Adapted Dijkstra)
+
+actor User
+participant "CriticalPathPanel" as P
+participant "CriticalPathService" as C
+participant "ContactGraph" as G
+participant "PriorityQueue" as PQ
+participant "PathResult" as PR
+participant "GraphVisualizer" as V
+
+User -> P : clicks CALCULAR
+P -> P : read fromCombo, toCombo
+
+P -> C : computeCriticalPath(graph, originEmail, destinationEmail)
+C -> G : findVertex(originEmail)
+G --> C : source
+C -> G : findVertex(destinationEmail)
+G --> C : destination
+
+C -> C : initialise dist map (all = Infinity, source = 0)
+C -> C : initialise predecessor map
+C -> C : initialise settled set
+C -> PQ : offer(source, cost=0)
+
+loop until PQ empty or destination settled
+    C -> PQ : poll() -> VertexEntry(current, cost)
+    alt current already settled
+        C -> C : skip (stale entry)
+    else
+        C -> C : settled.add(current)
+        alt current == destination
+            C -> C : break
+        else
+            C -> G : getOutEdges(current)
+            G --> C : List<Edge>
+            loop for each edge
+                C -> C : newCost = dist[current] + 1.0 / edge.getWeight()
+                alt newCost < dist[neighbour]
+                    C -> C : dist[neighbour] = newCost
+                    C -> C : predecessor[neighbour] = current
+                    C -> PQ : offer(neighbour, newCost)
+                end
+            end
+        end
+    end
+end
+
+C -> C : reconstructPath(predecessor, source, destination)
+C -> C : computeAccumulatedDependency(graph, path)
+
+C -> PR : new PathResult(path, totalInverseCost, accumulatedDependency)
+PR --> C : pathResult
+C --> P : pathResult
+
+P -> P : prepend result text to resultArea
+
+alt pathResult.exists()
+    P -> V : displayWithPath(graph, pathResult, "Caminho Critico", "Dijkstra")
+    V -> V : build subgraph + highlight path
+    V -> V : gsGraph.display()
+end
+
+@enduml

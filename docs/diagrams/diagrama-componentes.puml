@@ -1,0 +1,128 @@
+@startuml Diagrama_Componentes
+
+skinparam componentStyle uml2
+skinparam linetype ortho
+
+title Diagrama de Componentes — Enron Graph Analyzer
+
+package "Apresentacao (view)" {
+    component [SearchPanel\n<<JFrame>>] as SP
+    component [TweaksPanel\n<<JDialog>>] as TP
+
+    package "Componentes UI" {
+        component [PanelHeader] as PH
+        component [QueryRow] as QR
+        component [Sidebar] as SB
+        component [StatusBar] as STB
+        component [SwingHelper\n<<utility>>] as SH
+    }
+
+    package "Paineis de Conteudo" {
+        component [OverviewPanel] as OP
+        component [DfsBfsPanel] as DP
+        component [DistancePanel] as DIP
+        component [CriticalPathPanel] as CP
+    }
+
+    component [GraphVisualizer] as GV
+}
+
+package "Dominio (model)" {
+    component [Vertex] as V
+    component [Edge] as E
+    component [PathResult] as PR
+    component [DegreeResult] as DR
+    component [EmailMessage] as EM
+}
+
+package "Grafo (graph)" {
+    component [ContactGraph\n<<Serializable>>] as CG
+}
+
+package "Servicos (service)" {
+    component [ContactAnalyzer] as CA
+    component [DepthFirstSearch] as DFS
+    component [BreadthFirstSearch] as BFS
+    component [DistanceCalculator] as DC
+    component [CriticalPathService] as CPS
+}
+
+package "Parser (parser)" {
+    component [EnronDatasetReader] as EDR
+    component [EmailParser] as EP
+}
+
+package "Infraestrutura (util + design)" {
+    component [DesignSystem] as DS
+    component [FontManager] as FM
+    component [EmailValidator] as EV
+}
+
+package "Aplicacao (app)" {
+    component [Main] as M
+}
+
+package "Bibliotecas Externas" {
+    component [GraphStream 2.0] as GS
+}
+
+' --- Dependencias ---
+
+M --> EDR : carrega dataset
+M --> SP  : cria janela
+M --> DS  : configura tema
+
+SP --> SB  : sidebar
+SP --> STB : statusbar
+SP --> OP  : tab 01
+SP --> DP  : tab 02
+SP --> DIP : tab 03
+SP --> CP  : tab 04
+SP --> TP  : tweaks
+SP --> GV  : visualizador
+
+DP  --> DFS : busca DFS
+DP  --> BFS : busca BFS
+DP  --> GV  : visualiza caminho
+DIP --> DC  : calcula distancia
+DIP --> GV  : ego network
+CP  --> CPS : caminho critico
+CP  --> GV  : visualiza caminho
+OP  --> CA  : estatisticas
+
+DP  --> PH : header
+DP  --> QR : query
+DIP --> PH : header
+DIP --> QR : query
+CP  --> PH : header
+CP  --> QR : query
+OP  --> PH : header
+
+SH  --> DS : cores
+SH  --> FM : fontes
+
+PH  ..> SH : usa
+QR  ..> SH : usa
+SB  ..> SH : usa
+STB ..> SH : usa
+
+GV  --> GS  : renderiza grafo
+GV  --> CG  : le subgrafo
+GV  --> PR  : destaca caminho
+
+CA  --> CG  : analisa
+DFS --> CG  : percorre
+BFS --> CG  : percorre
+DC  --> CG  : percorre
+CPS --> CG  : percorre
+
+EDR --> EP  : parseia emails
+EP  --> EV  : valida/normaliza
+EDR --> CG  : constroi grafo
+
+CG  --> V   : contem
+CG  --> E   : contem
+
+TP  --> DS  : alterna tema
+
+@enduml
