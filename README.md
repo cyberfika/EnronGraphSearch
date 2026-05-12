@@ -558,27 +558,3 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software.
 ```
-
----
-
-## 👨‍💻 Contribuindo
-
-Sugestões, bug reports e pull requests são bem-vindos!
-
-```bash
-# Clone o repositório
-git clone https://github.com/cyberfika/EnronGraphSearch.git
-cd EnronGraphSearch
-
-# Crie uma branch para sua feature
-git checkout -b feature/sua-feature
-
-# Commit com mensagem descritiva
-git commit -m "feat: adiciona nova funcionalidade"
-
-# Push para a branch
-git push origin feature/sua-feature
-
-# Abra um Pull Request
-```
-
